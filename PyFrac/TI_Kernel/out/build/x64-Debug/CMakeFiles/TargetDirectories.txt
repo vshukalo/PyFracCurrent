@@ -1,0 +1,3 @@
+W:/src/PyFrac/PyFrac/TI_Kernel/out/build/x64-Debug/CMakeFiles/TI_elasticity_kernel.dir
+W:/src/PyFrac/PyFrac/TI_Kernel/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+W:/src/PyFrac/PyFrac/TI_Kernel/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir

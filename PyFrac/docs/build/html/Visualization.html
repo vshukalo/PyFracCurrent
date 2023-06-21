@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Post-processing and Visualization &#8212; PyFrac 1.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="Examples.html" />
+    <link rel="prev" title="Running a Simulation" href="RunningASimulation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Examples.html" title="Examples"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="RunningASimulation.html" title="Running a Simulation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PyFrac 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Post-processing and Visualization</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="post-processing-and-visualization">
+<span id="postproc-visul"></span><h1>Post-processing and Visualization<a class="headerlink" href="#post-processing-and-visualization" title="Permalink to this heading">¶</a></h1>
+<p>A comprehensive set of post-processing and visualization routines are provided by PyFrac.</p>
+<section id="plotting-a-fracture">
+<h2>Plotting a Fracture<a class="headerlink" href="#plotting-a-fracture" title="Permalink to this heading">¶</a></h2>
+<p>Let us start by visualizing the initial fracture in the <a class="reference internal" href="RunningASimulation.html#run-a-simulation"><span class="std std-ref">Running a Simulation</span></a> section. To plot the fracture, we can use the <code class="xref py py-func docutils literal notranslate"><span class="pre">fracture.Fracture.plot_fracture()</span></code> function provided by the Fracture class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Fr</span><span class="o">.</span><span class="n">plot_fracture</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>With the default options, this function plots the mesh, the footprint and the fracture width with 3D projection. The plot is interactive and can be zoomed in using the mouse wheel.</p>
+<a class="reference internal image-reference" href="_images/default_fracture.png"><img alt="_images/default_fracture.png" class="align-center" src="_images/default_fracture.png" style="width: 512.0px; height: 380.8px;" /></a>
+<p>You can also provide the quantity you want to plot. The following quantities can be plotted:</p>
+<table class="docutils align-center">
+<thead>
+<tr class="row-odd"><th class="head"><p>supported variables</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>‘w’ or ‘width’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘pf’ or ‘fluid pressure’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘pn’ or ‘net pressure’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘v’ or ‘front velocity’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘Re’ or ‘Reynolds number’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘ff’ or ‘fluid flux’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘fv’ or ‘fluid velocity’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘lk’ or ‘leak off’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘mesh’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘footprint’</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The variables ‘Reynolds number’, ‘fluid flux’ and ‘fluid velocity’ are not saved by default in the results. Their saving can be enabled using simulation properties. See <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.SimulationProperties</span></code> for details.</p>
+</div>
+<p>For example, to plot fracture footprint in 2D projection, we can do the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Fig</span> <span class="o">=</span> <span class="n">Fr</span><span class="o">.</span><span class="n">plot_fracture</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;mesh&#39;</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">)</span>
+<span class="n">Fig</span> <span class="o">=</span> <span class="n">Fr</span><span class="o">.</span><span class="n">plot_fracture</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;footprint&#39;</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">Fig</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The first instruction will plot mesh of the Fracture and will return a <code class="xref py py-class docutils literal notranslate"><span class="pre">Figure</span></code> object. We can use the same figure to plot the footprint. In this case, it will be superimposed on the first plot. The variables can also be plotted as a colormap or contours. Let us plot the width of the our fracture in the form of a colormap. We can also superimpose contours on it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Fig</span> <span class="o">=</span> <span class="n">Fr</span><span class="o">.</span><span class="n">plot_fracture</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D_clrmap&#39;</span><span class="p">)</span>
+<span class="n">Fig</span> <span class="o">=</span> <span class="n">Fr</span><span class="o">.</span><span class="n">plot_fracture</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">Fig</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D_contours&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let us also superimpose fracture footprint to know where the fracture front is located. The color of the front line can be changed to distinguish it from the contour lines. This can be done by giving it customized plot properties.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">PlotProperties</span>
+
+<span class="n">plot_properties</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">line_color</span><span class="o">=</span><span class="s1">&#39;tomato&#39;</span><span class="p">)</span>
+<span class="n">Fig</span> <span class="o">=</span> <span class="n">Fr</span><span class="o">.</span><span class="n">plot_fracture</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;footprint&#39;</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">Fig</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span> <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_properties</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/width_contours.png"><img alt="_images/width_contours.png" class="align-center" src="_images/width_contours.png" style="width: 512.0px; height: 380.8px;" /></a>
+<p>The above example shows only some basic functionality. For a complete list of available options, see the documentation of the <code class="xref py py-func docutils literal notranslate"><span class="pre">fracture.Fracture.plot_fracture()</span></code> function.</p>
+<p>Apart from plotting the whole fracture, you can also plot a slice of the fracture using the <code class="xref py py-func docutils literal notranslate"><span class="pre">fracture.Fracture.plot_fracture_slice()</span></code> function. It plots a slice of the domain defined by two given points. let us plot a slice of our mesh passing from the two points (-7, -5) and (7, 5).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Fr</span><span class="o">.</span><span class="n">plot_fracture_slice</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;width&#39;</span><span class="p">,</span> <span class="n">point1</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">],</span> <span class="n">point2</span><span class="o">=</span><span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>By default, it will be plotted in 2D projection, but 3D projection can also be plotted.</p>
+<a class="reference internal image-reference" href="_images/fracture_slice.png"><img alt="_images/fracture_slice.png" class="align-center" src="_images/fracture_slice.png" style="width: 512.0px; height: 500.8px;" /></a>
+<p>If you want to have more control on your plots, you can use the underlying functions that are used by the <code class="xref py py-func docutils literal notranslate"><span class="pre">fracture.Fracture.plot_fracture()</span></code> function. Worth mentioning among them are the <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_fracture_variable_as_image()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_fracture_variable_as_contours()</span></code> and <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_variable_vs_time()</span></code>. To use these functions, you can load a fracture variable using <code class="xref py py-func docutils literal notranslate"><span class="pre">postprocess_fracture.get_fracture_variable()</span></code> function. See the documentation for more details.</p>
+</section>
+<section id="plotting-fracture-evolution">
+<h2>Plotting Fracture Evolution<a class="headerlink" href="#plotting-fracture-evolution" title="Permalink to this heading">¶</a></h2>
+<p>The first step to visualize the fracture evolution is to load the fracture objects at different times from a stored simulation run. <code class="xref py py-func docutils literal notranslate"><span class="pre">postprocess_fracture.load_fractures()</span></code> function will do that for you. You can provide the times at which the state of fracture is to be loaded. The function will return a list of Fracture objects closest to the times given in the time series. It will also return the properties used in the simulation in the form of a tuple consisting of solid, fluid, injection and simulation properties in order. Note that for a time given in the time series, the fracture with the closest and larger time will be returned. Let us load the results from the simulation ran in the <a class="reference internal" href="RunningASimulation.html#run-a-simulation"><span class="std std-ref">Running a Simulation</span></a> section:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">postprocess_fracture</span> <span class="kn">import</span> <span class="n">load_fractures</span>
+
+<span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="n">sim_name</span><span class="o">=</span><span class="s1">&#39;radial&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that we have not provided any time series. In this case, all of the fractures will be loaded. Also, since we have not provided any disk address, the results will be loaded from the default folder. If multiple simulations with the same simulation name are found, the most recent run will be loaded. Now let us plot the evolution of the fracture radius of the loaded fractures. We can use the <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_fracture_list()</span></code> to do that.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">PlotProperties</span>
+<span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="n">plot_fracture_list</span>
+
+<span class="n">plot_prop</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">line_style</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">graph_scaling</span><span class="o">=</span><span class="s1">&#39;loglog&#39;</span><span class="p">)</span>
+<span class="n">Fig_R</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                           <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;d_mean&#39;</span><span class="p">,</span>
+                           <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The above instructions will instantiate a <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.PlotProperties</span></code> class object that can be used to specify the properties that are to be used to plot the given variable. The variable ‘d_mean’ here specifies the minimum distance of the front from the injection point. Below is the list of variables that can be plotted.</p>
+<table class="docutils align-center" id="variable-table">
+<thead>
+<tr class="row-odd"><th class="head"><p>supported variables</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>‘w’ or ‘width’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘pf’ or ‘fluid pressure’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘pn’ or ‘net pressure’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘v’ or ‘front velocity’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘d_min’ or ‘front_dist_min’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘d_max’ or ‘front_dist_max’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘d_mean’ or ‘front_dist_mean’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘V’ or ‘volume’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘lk’ or ‘leak off’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘lkt’ or ‘leaked off total’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘ar’ or ‘aspect ratio’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘ef’ or ‘efficiency’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘Re’ or ‘Reynolds number’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘ff’ or ‘fluid flux’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘fv’ or ‘fluid velocity’</p></td>
+</tr>
+<tr class="row-odd"><td><p>‘mesh’</p></td>
+</tr>
+<tr class="row-even"><td><p>‘footprint’</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The variables ‘Reynolds number’, ‘fluid flux’ and ‘fluid velocity’ are not saved by default in the results. Their saving can be enabled using simulation properties. See <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.SimulationProperties</span></code> for details.</p>
+</div>
+<p>PyFrac provides the capability to plot analytical solutions available in a number of limiting regimes. Let us compare the fracture radius we have to a fracture propagating in a toughness dominated regime.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">postprocess_fracture</span> <span class="kn">import</span> <span class="n">get_fracture_variable</span>
+<span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="n">plot_analytical_solution</span>
+
+<span class="n">time_srs</span> <span class="o">=</span> <span class="n">get_fracture_variable</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">Fig_R</span> <span class="o">=</span> <span class="n">plot_analytical_solution</span><span class="p">(</span><span class="n">regime</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                                 <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;d_mean&#39;</span><span class="p">,</span>
+                                 <span class="n">mat_prop</span><span class="o">=</span><span class="n">Solid</span><span class="p">,</span>
+                                 <span class="n">inj_prop</span><span class="o">=</span><span class="n">Injection</span><span class="p">,</span>
+                                 <span class="n">fluid_prop</span><span class="o">=</span><span class="n">Fluid</span><span class="p">,</span>
+                                 <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">,</span>
+                                 <span class="n">fig</span><span class="o">=</span><span class="n">Fig_R</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The function <code class="xref py py-func docutils literal notranslate"><span class="pre">postprocess_fracture.get_fracture_variable()</span></code> provides a list of the values of the required variable. Here, we have used it to get a list of times at which the solution is available in the fracture list. This list, along with the material, fluid and injection properties are then given to the <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_analytical_solution()</span></code> function to plot the analytical solution at the given times. Just like the case of a single fracture, the evolution of a fracture along a slice of the domain can also be plotted. Let us plot the fracture width evolution along a vertical slice passing through the injection point. Unlike the previous example where the solution was interpolated between the evaluated solution on the line joining the two given points, here we will plot the discrete values of the solution evaluated at the cell centers. This can be done by enabling the plot_cell_center argument. Below, we plot the width at cell centers along the vertical line passing through the center of the cell containing our point.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="n">plot_fracture_list_slice</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">time_srs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mf">4e-3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="n">sim_name</span><span class="o">=</span><span class="s2">&quot;radial&quot;</span><span class="p">,</span> <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">)</span>
+
+<span class="c1"># plot slice</span>
+<span class="n">ext_pnts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">Fig_WS</span> <span class="o">=</span> <span class="n">plot_fracture_list_slice</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                                  <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span>
+                                  <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span>
+                                  <span class="n">point1</span><span class="o">=</span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+                                  <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">,</span>
+                                  <span class="n">plot_cell_center</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                  <span class="n">extreme_points</span><span class="o">=</span><span class="n">ext_pnts</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the above code, we first load the state of the fracture at five equidistant times in geometric space. The fracture list is then passed to the <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_fracture_list_slice()</span></code> which plots the slice of the domain passing through the given point. To compare the solution, we can also plot slice of the analytical solution. We have passed an empty array to the slice plotting function which will be written by the extreme points on the mesh along the slice, which can be used to plot the analytical solution slice.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="n">plot_analytical_solution_slice</span>
+
+<span class="n">time_srs_loaded</span> <span class="o">=</span> <span class="n">get_fracture_variable</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">Fig_WS</span> <span class="o">=</span> <span class="n">plot_analytical_solution_slice</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                                        <span class="s1">&#39;w&#39;</span><span class="p">,</span>
+                                        <span class="n">Solid</span><span class="p">,</span>
+                                        <span class="n">Injection</span><span class="p">,</span>
+                                        <span class="n">fluid_prop</span><span class="o">=</span><span class="n">Fluid</span><span class="p">,</span>
+                                        <span class="n">fig</span><span class="o">=</span><span class="n">Fig_WS</span><span class="p">,</span>
+                                        <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs_loaded</span><span class="p">,</span>
+                                        <span class="n">point1</span><span class="o">=</span><span class="n">ext_pnts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                        <span class="n">point2</span><span class="o">=</span><span class="n">ext_pnts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Finally, in addition to the slice, solution at a single point can also be plotted using the <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_fracture_list_at_point()</span></code> function. See the documention of the functions for details.</p>
+</section>
+<section id="exporting-selected-data-to-json">
+<h2>Exporting selected data to JSON<a class="headerlink" href="#exporting-selected-data-to-json" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>You can export the data to one or more JSON files (JavaScript Object Notation) and then post-process them via other programs e.g. Wolfram Mathematica. The function <code class="xref py py-func docutils literal notranslate"><span class="pre">append_to_json_file()</span></code> is used for both creating and adding data to the file. The function behaves differently in the case the JSON file exists or not. In the latter case, it creates a Python dictionary while in the former case it will be imported from the file. Currently, the imported dictionary is obscure to the user i.e. the function provides to the user only a way to write to JSON and not to read what is saved in it. Think to the function as a tool to create a Python dictionary that will be “the box” where to store and organize data using the labels you decide (keys). The function requires a minimum number of 3 to 4 arguments depending on what you decide to do:</dt><dd><ul class="simple">
+<li><p>In the case you have a python dictionary that you would like to dump to a new file, the function <code class="xref py py-func docutils literal notranslate"><span class="pre">append_to_json_file()</span></code> requires at least 3 arguments: the filename, the data to be written (a python dictionary) and the operation to be done, that is ‘dump_this_dictionary’.</p></li>
+<li><p>the same 3 arguments must be provided in the case you want to extend an exixting JSON file with a python dictionary: the filename, the data to be written (a python dictionary) and the operation to be done, that is ‘extend_dictionary’.</p></li>
+<li><p>Regardless whether the JSON file exists or not, you can dump a key of a dictionary and the associated list of data. If the file does not yet exist the function creates the file and makes the related dictionary containing the key and the data. You should provide to the function at least these 4 arguments: the filename, the data to be written and the operation to be done - i.e. ‘append2keyASnewlist’ - along with the key. This case apply also if you want to substitute the content of an existing key by creating a new list containing both, the current list associated with the key and a new list.</p></li>
+<li><p>the same 4 arguments must be provided in case you want to append the content of a list to an existing one (associated with an existing key). In that case, you should provide the filename, the data to be written and the operation to be done - i.e. ‘append2keyAND2list’ - along with the key.</p></li>
+</ul>
+</dd>
+</dl>
+<p>In the following example, we export to a JSON file the list of times at which the solution has been computed and saved (‘time_srs’). We decided to call the associated key as ‘append2keyASnewlist’.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">postprocess_fracture</span> <span class="kn">import</span> <span class="n">append_to_json_file</span>
+<span class="n">myJsonName</span><span class="o">=</span><span class="s1">&#39;./path/and/name/of/my/jsonfile.json&#39;</span>
+
+<span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="s1">&#39;path/to/the/directory/with/the/results&#39;</span><span class="p">)</span>
+<span class="n">Solid</span><span class="p">,</span> <span class="n">Fluid</span><span class="p">,</span> <span class="n">Injection</span><span class="p">,</span> <span class="n">simulProp</span> <span class="o">=</span> <span class="n">properties</span>
+<span class="n">time_srs</span> <span class="o">=</span> <span class="n">get_fracture_variable</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+
+<span class="n">append_to_json_file</span><span class="p">(</span><span class="n">myJsonName</span><span class="p">,</span> <span class="n">time_srs</span><span class="p">,</span>
+                    <span class="s1">&#39;append2keyASnewlist&#39;</span><span class="p">,</span>
+                    <span class="n">key</span><span class="o">=</span><span class="s1">&#39;time_srs_of_Fr_list&#39;</span><span class="p">,</span>
+                    <span class="n">delete_existing_filename</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The following piece of code can follow the previous one. Here we are interested in saving the fracture opening ‘w’ as a function of time at a specific point (coordinates x=-0.02 m and y=0.0 m).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="kn">from</span> <span class="nn">postprocess_fracture</span> <span class="kn">import</span> <span class="n">get_fracture_variable_at_point</span>
+<span class="n">wATpointA</span><span class="p">,</span> <span class="n">time</span> <span class="o">=</span> <span class="n">get_fracture_variable_at_point</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">point</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">append_to_json_file</span><span class="p">(</span><span class="n">myJsonName</span><span class="p">,</span> <span class="n">wATpointA</span><span class="p">,</span> <span class="s1">&#39;append2keyASnewlist&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;wATpointA&#39;</span><span class="p">)</span>
+<span class="n">append_to_json_file</span><span class="p">(</span><span class="n">myJsonName</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="s1">&#39;append2keyASnewlist&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The function <code class="xref py py-func docutils literal notranslate"><span class="pre">append_to_json_file()</span></code> by default does not remove the existing JSON file. A new file is created if it does not exist, otherwise, it is extended with the provided data. In the case of the example above, the option ‘delete_existing_filename=True’ make sure that the data is dumped to a new file by deleting the existing one. Thus in this case the function creates a new python dictionary with one key and the associated list before dumping the dictionary to the file.
+Note that at each call to the function <code class="xref py py-func docutils literal notranslate"><span class="pre">append_to_json_file()</span></code>, the existing JSON file is loaded, extended and finally the file is rewritten. Thus if you are dealing with large files, we suggest preparing a python dictionary and dump it to the file at the end with a single call the function. Another option is to split the data between more files.
+The following example is more advanced. By adding the argument ‘export2Json=True’ when calling it, the function <code class="xref py py-func docutils literal notranslate"><span class="pre">plot_fracture_list_slice()</span></code> returns a dictionary that contains the numerical data used to create the corresponding plot. We then create a dictionary under the name ‘towrite’ and we merge it to the existing JSON file.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">postprocess_fracture</span> <span class="kn">import</span> <span class="n">append_to_json_file</span>
+<span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="n">plot_fracture_list_slice</span>
+<span class="c1">########## TAKE A VERTICAL SECTION (along y axis) TO GET w AT THE MIDDLE ########</span>
+<span class="n">ext_pnts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> 8) getting the slice along the y axis to get w(y)... &quot;</span><span class="p">)</span>
+<span class="n">fracture_list_slice</span> <span class="o">=</span> <span class="n">plot_fracture_list_slice</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                                  <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span>
+                                  <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span>
+                                  <span class="n">plot_cell_center</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                  <span class="n">extreme_points</span><span class="o">=</span><span class="n">ext_pnts</span><span class="p">,</span>
+                                  <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">,</span>
+                                  <span class="n">point1</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0007</span><span class="p">,</span><span class="o">-</span><span class="mf">0.008</span><span class="p">],</span>
+                                  <span class="n">point2</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0007</span><span class="p">,</span><span class="mf">0.008</span><span class="p">],</span> <span class="n">export2Json</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">towrite</span> <span class="o">=</span>  <span class="p">{</span><span class="s1">&#39;intersectionVslice&#39;</span><span class="p">:</span><span class="n">fracture_list_slice</span><span class="p">}</span>
+<span class="n">append_to_json_file</span><span class="p">(</span><span class="n">myJsonName</span><span class="p">,</span> <span class="n">towrite</span><span class="p">,</span> <span class="s1">&#39;extend_dictionary&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the script above, “fracture_list_slice” contains a list of coordinates ad a series of lists containing the fracture opening “w” at the same locations but  at different times (provided by “Fr_list”). If you are using any kind of remeshing, the mesh will change. This means that, before and after the remeshing,  the locations where you get the fracture opening “w” along your slice are different. Thus you must provide the option “export2Json_assuming_no_remeshing=False” as in the script below. This option will make sure that for each time you will export a list of coordinates with the location of the points in the mesh where you get the values of “w”.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">postprocess_fracture</span> <span class="kn">import</span> <span class="n">append_to_json_file</span>
+<span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="n">plot_fracture_list_slice</span>
+<span class="c1">########## TAKE A VERTICAL SECTION (along y axis) TO GET w AT THE MIDDLE ########</span>
+<span class="n">ext_pnts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> 8) getting the slice along the y axis to get w(y)... &quot;</span><span class="p">)</span>
+<span class="n">fracture_list_slice</span> <span class="o">=</span> <span class="n">plot_fracture_list_slice</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                                  <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span>
+                                  <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span>
+                                  <span class="n">plot_cell_center</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                  <span class="n">extreme_points</span><span class="o">=</span><span class="n">ext_pnts</span><span class="p">,</span>
+                                  <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">,</span>
+                                  <span class="n">point1</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0007</span><span class="p">,</span><span class="o">-</span><span class="mf">0.008</span><span class="p">],</span>
+                                  <span class="n">point2</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.0007</span><span class="p">,</span><span class="mf">0.008</span><span class="p">],</span>
+                                  <span class="n">export2Json</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                  <span class="n">export2Json_assuming_no_remeshing</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">towrite</span> <span class="o">=</span>  <span class="p">{</span><span class="s1">&#39;intersectionVslice&#39;</span><span class="p">:</span><span class="n">fracture_list_slice</span><span class="p">}</span>
+<span class="n">append_to_json_file</span><span class="p">(</span><span class="n">myJsonName</span><span class="p">,</span> <span class="n">towrite</span><span class="p">,</span> <span class="s1">&#39;extend_dictionary&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the following example we create a dictionary and then we save it to a JSON file under the key ‘complete_footrints’. Note that in this case we are building a structure made of nested dictionaries. This example allows you to export the coordinates of the points defining the fracture front in each cell of the mesh (‘fracture.Ffront’) and for each time of the simulation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">postprocess_fracture</span> <span class="kn">import</span> <span class="n">append_to_json_file</span>
+<span class="n">fracture_fronts</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">numberof_fronts</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">fracture</span> <span class="ow">in</span> <span class="n">Fr_list</span><span class="p">:</span>
+    <span class="n">fracture_fronts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">tolist</span><span class="p">(</span><span class="n">fracture</span><span class="o">.</span><span class="n">Ffront</span><span class="p">))</span>
+    <span class="n">numberof_fronts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fracture</span><span class="o">.</span><span class="n">number_of_fronts</span><span class="p">)</span>
+
+<span class="n">complete_footprints</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;time_srs_of_Fr_list&#39;</span><span class="p">:</span> <span class="n">time_srs_COMPLETE</span><span class="p">,</span>
+                       <span class="s1">&#39;Fr_list&#39;</span><span class="p">:</span> <span class="n">fracture_fronts</span><span class="p">,</span>
+                       <span class="s1">&#39;Number_of_fronts&#39;</span><span class="p">:</span> <span class="n">numberof_fronts</span>
+                       <span class="p">}</span>
+
+<span class="n">append_to_json_file</span><span class="p">(</span><span class="n">myJsonName</span><span class="p">,</span>
+                    <span class="n">complete_footprints</span><span class="p">,</span>
+                    <span class="s1">&#39;append2keyASnewlist&#39;</span><span class="p">,</span>
+                    <span class="n">key</span><span class="o">=</span><span class="s1">&#39;complete_footrints&#39;</span><span class="p">,</span>
+                    <span class="n">delete_existing_filename</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Post-processing and Visualization</a><ul>
+<li><a class="reference internal" href="#plotting-a-fracture">Plotting a Fracture</a></li>
+<li><a class="reference internal" href="#plotting-fracture-evolution">Plotting Fracture Evolution</a></li>
+<li><a class="reference internal" href="#exporting-selected-data-to-json">Exporting selected data to JSON</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="RunningASimulation.html"
+                          title="previous chapter">Running a Simulation</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="Examples.html"
+                          title="next chapter">Examples</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/Visualization.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Examples.html" title="Examples"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="RunningASimulation.html" title="Running a Simulation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PyFrac 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Post-processing and Visualization</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016-2020, ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, Switzerland, Geo-Energy Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

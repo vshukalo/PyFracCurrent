@@ -1,0 +1,113 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>01d71bba-f1d6-49b6-bc53-eb3bb9b57076</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>sandbox\sandbox2.py</StartupFile>
+    <SearchPath>src</SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>PyFracMP1</Name>
+    <RootNamespace>PyFracMP1</RootNamespace>
+    <TestFramework>Pytest</TestFramework>
+    <IsWindowsApplication>False</IsWindowsApplication>
+    <InterpreterId>Global|PythonCore|3.6</InterpreterId>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="benchmarks\" />
+    <Folder Include="examples\" />
+    <Folder Include="regression_tests\" />
+    <Folder Include="sandbox\" />
+    <Folder Include="src\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="examples\data_HB_n06.json" />
+    <Content Include="examples\README_examples.md" />
+    <Content Include="examples\width_n_05.csv" />
+    <Content Include="examples\wu_et_al_data.csv" />
+    <Content Include="src\.DS_Store" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="benchmarks\simulparam_and_tolerances.py" />
+    <Compile Include="benchmarks\test_simulations.py" />
+    <Compile Include="examples\batch_run.py" />
+    <Compile Include="examples\buoyancy_line_source.py" />
+    <Compile Include="examples\dyke_spreading_mesh_extension.py" />
+    <Compile Include="examples\ellipse_Anisotropic_toughness.py" />
+    <Compile Include="examples\ellipse_TI_elasticity.py" />
+    <Compile Include="examples\Ex1_radial_MtoKtilde_CPC.py" />
+    <Compile Include="examples\Ex2_height_contained_CPC.py" />
+    <Compile Include="examples\Ex3_dyke_spreading_CPC.py" />
+    <Compile Include="examples\Ex4_fracture_closure_CPC.py" />
+    <Compile Include="examples\Experiment_Wu_et_al.py" />
+    <Compile Include="examples\HB_line_source-sink_injection_line.py" />
+    <Compile Include="examples\height_contained_mesh_extension.py" />
+    <Compile Include="examples\Herschel_Bulkley_radial_M.py" />
+    <Compile Include="examples\Power_law_radial_M.py" />
+    <Compile Include="examples\Power_law_radial_MtoKtilde.py" />
+    <Compile Include="examples\pre_existing_fracture.py" />
+    <Compile Include="examples\radial_K_symmetric.py" />
+    <Compile Include="examples\radial_MtoK.py" />
+    <Compile Include="examples\radial_MtoKtilde_phi_1e-2.py" />
+    <Compile Include="examples\radial_MtoMtilde.py" />
+    <Compile Include="examples\radial_pulse_leakoff_arrest.py" />
+    <Compile Include="examples\radial_pulse_toughness_arrest.py" />
+    <Compile Include="examples\radial_viscosity_explicit.py" />
+    <Compile Include="examples\radial_viscosity_pulse.py" />
+    <Compile Include="examples\simplified_input.py" />
+    <Compile Include="examples\stress_heterogeneities.py" />
+    <Compile Include="examples\toughness_anisotropy_jump.py" />
+    <Compile Include="regression_tests\TEST_continuous_front_reconstruction.py" />
+    <Compile Include="regression_tests\TEST_toepliz_class.py" />
+    <Compile Include="sandbox\Ex2_height_contained_CPC.py" />
+    <Compile Include="sandbox\sandbox.py" />
+    <Compile Include="sandbox\sandbox2.py" />
+    <Compile Include="sandbox\stress_heterogeneities.py" />
+    <Compile Include="src\anisotropy.py" />
+    <Compile Include="src\continuous_front_reconstruction.py" />
+    <Compile Include="src\controller.py" />
+    <Compile Include="src\default_parameters.py" />
+    <Compile Include="src\elasticity.py" />
+    <Compile Include="src\elastohydrodynamic_solver.py" />
+    <Compile Include="src\explicit_RKL.py" />
+    <Compile Include="src\fluid_model.py" />
+    <Compile Include="src\fracture.py" />
+    <Compile Include="src\fracture_initialization.py" />
+    <Compile Include="src\HF_reference_solutions.py" />
+    <Compile Include="src\labels.py" />
+    <Compile Include="src\level_set.py" />
+    <Compile Include="src\mesh.py" />
+    <Compile Include="src\postprocess_fracture.py" />
+    <Compile Include="src\postprocess_performance.py" />
+    <Compile Include="src\properties.py" />
+    <Compile Include="src\symmetry.py" />
+    <Compile Include="src\time_step_solution.py" />
+    <Compile Include="src\tip_inversion.py" />
+    <Compile Include="src\utility.py" />
+    <Compile Include="src\visualization.py" />
+    <Compile Include="src\volume_integral.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.6" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>

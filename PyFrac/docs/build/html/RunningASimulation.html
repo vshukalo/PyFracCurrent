@@ -1,0 +1,403 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Running a Simulation &#8212; PyFrac 1.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Post-processing and Visualization" href="Visualization.html" />
+    <link rel="prev" title="Getting started" href="GettingStarted.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Visualization.html" title="Post-processing and Visualization"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="GettingStarted.html" title="Getting started"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PyFrac 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Running a Simulation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="running-a-simulation">
+<span id="run-a-simulation"></span><h1>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this heading">¶</a></h1>
+<p>Lets run a simple simulation of a radial fracture propagation. The first step towards running the simulation is to create a mesh describing our domain as a <code class="xref py py-class docutils literal notranslate"><span class="pre">mesh.CartesianMesh</span></code> object (see the class documentation for details). PyFrac uses a rectangular mesh to discretize the domain.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mesh</span> <span class="kn">import</span> <span class="n">CartesianMesh</span>
+
+<span class="n">Mesh</span> <span class="o">=</span> <span class="n">CartesianMesh</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The above code will generate a rectangular mesh with 41 cells along both the x and y axes, having the dimensions of [x_min=-0.3, x_max=0.3, y_min=-0.3, y_max=0.3] meters. Next, we have to specify the parameters describing the material being fractured and the injected fluid. This is to be done by instantiating the properties classes. Below, we set up a material with the Poisson’s ratio of <span class="math notranslate nohighlight">\(0.4\)</span>, the Young’s modulus of <span class="math notranslate nohighlight">\(3.3\times10^{10}\,Pa\)</span>  and the fracture toughness of <span class="math notranslate nohighlight">\(0.005\;Mpa\,\sqrt{m}\)</span> by instantiating a <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.MaterialProperties</span></code> object:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">MaterialProperties</span>
+
+<span class="c1"># solid properties</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.4</span>                            <span class="c1"># Poisson&#39;s ratio</span>
+<span class="n">youngs_mod</span> <span class="o">=</span> <span class="mf">3.3e10</span>                 <span class="c1"># Young&#39;s modulus</span>
+<span class="n">Eprime</span> <span class="o">=</span> <span class="n">youngs_mod</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">nu</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># plain strain modulus</span>
+<span class="n">K_Ic</span> <span class="o">=</span> <span class="mf">5e3</span>                          <span class="c1"># fracture toughness</span>
+
+<span class="n">Solid</span> <span class="o">=</span> <span class="n">MaterialProperties</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span> <span class="n">Eprime</span><span class="p">,</span> <span class="n">K_Ic</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The fluid properties are to be set up with a <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.FluidProperties</span></code> object. Below we set up a fluid with a viscosity of <span class="math notranslate nohighlight">\(1.1\times 10^{-3}\;Pa\,s\)</span>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">FluidProperties</span>
+
+<span class="c1"># fluid properties</span>
+<span class="n">Fluid</span> <span class="o">=</span> <span class="n">FluidProperties</span><span class="p">(</span><span class="n">viscosity</span><span class="o">=</span><span class="mf">1.1e-3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next, we will set up injection parameters with the <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.InjectionProperties</span></code> object. For this simulation, we set the injection rate to be <span class="math notranslate nohighlight">\(0.001\;m^3/s\)</span>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span>  <span class="n">InjectionProperties</span>
+
+<span class="c1"># injection parameters</span>
+<span class="n">Q0</span> <span class="o">=</span> <span class="mf">0.001</span>  <span class="c1"># injection rate</span>
+<span class="n">Injection</span> <span class="o">=</span> <span class="n">InjectionProperties</span><span class="p">(</span><span class="n">Q0</span><span class="p">,</span> <span class="n">Mesh</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Simulation parameters such as the end time, the times at which the solution is required to be evaluated, the output folder to write data and many others can be set up using <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.SimulationProperties</span></code> object (See the class description for the available options). The parameters are read from a file at the time of instantiation. If no file is given, the default values are used. Below, we first instantiate the simulation parameters object with the default values and then set up the parameters that are required to be changed according to our simulation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">SimulationProperties</span>
+
+<span class="c1"># simulation properties</span>
+<span class="n">simulProp</span> <span class="o">=</span> <span class="n">SimulationProperties</span><span class="p">()</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">finalTime</span> <span class="o">=</span> <span class="mi">1</span>                      <span class="c1"># the time at which the simulation stops</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_simulation_name</span><span class="p">(</span><span class="s2">&quot;radial&quot;</span><span class="p">)</span>      <span class="c1"># name the simulation &quot;radial&quot;</span>
+</pre></div>
+</div>
+<p>After setting up of the properties, let us set up the initial state of the fracture that is to be propagated. It is done by creating a <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture.Fracture</span></code> object. For this simulation, we set the viscosity dominated analytical solution as the initial state of the fracture. This is done by first creating a <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture_initialization.Geometry</span></code> class object and setting up our initial shape as ‘radial’ and providing the initial radius. After that, we instantiate a <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture_initialization.InitializationParameters</span></code> class object and set the regime in which our initial fracture is propagating as “M” (specifying the viscosity dominated regime). This object along with the properties objects that we had instantiated before are passed to the constructor of the Fracture class. For a complete list of options and the ways a fracture can be initialized, see the documentation of the <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture_initialization.InitializationParameters</span></code> class. For this simulation, we start with a fracture with a radius of <span class="math notranslate nohighlight">\(0.1\,m\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fracture</span> <span class="kn">import</span> <span class="n">Fracture</span>
+<span class="kn">from</span> <span class="nn">fracture_initialization</span> <span class="kn">import</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">InitializationParameters</span>
+
+<span class="c1"># initialization parameters</span>
+<span class="n">Fr_geometry</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;radial&#39;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<span class="n">init_param</span> <span class="o">=</span> <span class="n">InitializationParameters</span><span class="p">(</span><span class="n">Fr_geometry</span><span class="p">,</span> <span class="n">regime</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+
+<span class="c1"># creating fracture object</span>
+<span class="n">Fr</span> <span class="o">=</span> <span class="n">Fracture</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+              <span class="n">init_param</span><span class="p">,</span>
+              <span class="n">Solid</span><span class="p">,</span>
+              <span class="n">Fluid</span><span class="p">,</span>
+              <span class="n">Injection</span><span class="p">,</span>
+              <span class="n">simulProp</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After specifying all the properties and initializing the fracture, we will set up a controller and run the simulation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">controller</span> <span class="kn">import</span> <span class="n">Controller</span>
+
+<span class="c1"># create a Controller</span>
+<span class="n">controller</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">(</span><span class="n">Fr</span><span class="p">,</span>
+                        <span class="n">Solid</span><span class="p">,</span>
+                        <span class="n">Fluid</span><span class="p">,</span>
+                        <span class="n">Injection</span><span class="p">,</span>
+                        <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># run the simulation</span>
+<span class="n">controller</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The <code class="xref py py-func docutils literal notranslate"><span class="pre">controller.Controller.run()</span></code> function will advance the simulation according to the parameters set in the simulation properties. The state of the fracture is stored in the form of the fracture object in the output folder set up in the simulation properties. A new folder with the name of the simulation and the time stamp at which the simulation was run is created for each of the simulation. If a folder or name is not provided, the simulation will be saved in the default folder (_simulation_data_PyFrac) with the default name (simulation). After the simulation is finished, the results can be post-processed and visualized using the provided visualization routines.</p>
+<section id="meshing-during-simulations">
+<h2>Meshing during simulations<a class="headerlink" href="#meshing-during-simulations" title="Permalink to this heading">¶</a></h2>
+<p>PyFrac is based on a planar structured rectangular mesh created at the beginning of all simulations. In the beginning of
+this chapter you’ve seen how to generate a mesh centered on [0, 0]. It is, however, possible to generate a mesh centered
+around any point you wish by executing the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mesh</span> <span class="kn">import</span> <span class="n">CartesianMesh</span>
+
+<span class="n">Mesh</span> <span class="o">=</span> <span class="n">CartesianMesh</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.175</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">],</span> <span class="mi">47</span><span class="p">,</span> <span class="mi">71</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will generate a mesh having dimensions of [x_min=-0.15, x_max=0.15, y_min=-0.175, y_max=0.05] meters. You can pass
+an array of two variables defining the limits of your mesh instead of a half length. Combinations of the two options are
+freely possible.</p>
+<p>In a next step we need to decide on how the mesh should evolve during the simulation. The default
+settings are such that we double the height and breadth of our cells once the fracture reaches the boundary of our
+mesh. For this re-meshing, the number of cells remains the same, so a doubling of the height and breadth results in a
+doubling of the discretized domain size. For the mesh given above the dimensions after such a re-meshing would be
+[x_min=-0.30, x_max=0.30, y_min=-0.2875, y_max=0.1625]. If you want to coarsen your mesh by a smaller factor, the
+re-meshing factor can be adapted with:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">SimulationProperties</span>
+
+<span class="n">simulProp</span> <span class="o">=</span> <span class="n">SimulationProperties</span><span class="p">()</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">remeshFactor</span> <span class="o">=</span> <span class="mf">1.5</span>
+</pre></div>
+</div>
+<p>If you don’t want the fracture to extend out of the original mesh. You can simply block re-meshing completely. In this
+case the simulation will stop once you reach the boundary. This can be performed by setting:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulProp</span><span class="o">.</span><span class="n">enableRemeshing</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+<p>We will refer to this type of re-meshing hereafter as the “mesh compression”.</p>
+<p>We implemented some additional features concerning the evolution of our discretized domain during the simulation. The
+first is called a “mesh extension”: This means that we add elements on the sides where the fracture is reaching the
+boundary of the domain. By default this feature is disabled to save memory and reduce computation time. It is, possible
+to allow the extension of the mesh in given directions. This can be achieved by the following command</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulProp</span><span class="o">.</span><span class="n">set_mesh_extension_direction</span><span class="p">([</span><span class="s1">&#39;top&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>The possible options are ‘top’, ‘bottom’, ‘left’, ‘right’ meaning respectively that the mesh is extended in direction
+of positive y, negative y, negative x, or positive x. Additionally, one can define an extension in ‘horizontal’,
+‘vertical’ or ‘all’ directions. Any combination of two parameters is possible. For example the line of code</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulProp</span><span class="o">.</span><span class="n">set_mesh_extension_direction</span><span class="p">([</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;left&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>will allow the mesh to extend towards positive y and negative x. The mesh extension factor tells you by which factor
+the number of elements is multiplied when the boundary is reached.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulProp</span><span class="o">.</span><span class="n">set_mesh_extension_factor</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The mesh extension factor can be chosen different for every direction. Passing a float (as in the example above) value
+will set it to the given value in all directions. Further options are the passing of a list with two entries (first
+gives the factor in direction x and second in direction y) or a list with four entries (respectively giving the factor
+in negative x, positive x, negative y and positive y). Two important notes on the mesh extension are to be made:</p>
+<ol class="arabic simple">
+<li><p>Whenever the fracture reaches a boundary where mesh extension has not been turned on, a re-meshing by compressing the
+domain (mesh compression) is performed.</p></li>
+<li><p>Whenever the fracture reaches the boundary in all four directions simultaneously, a re-meshing by compression of
+the domain (mesh compression) is done.</p></li>
+</ol>
+<p>The second point can be disabled by setting</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulProp</span><span class="o">.</span><span class="n">meshExtensionAllDir</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<p>In this case the fracture will add elements in the specified directions even if all four boundaries are reached
+simultaneously. Note that this option only makes sense if you’ve set</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulProp</span><span class="o">.</span><span class="n">set_mesh_extension_direction</span><span class="p">([</span><span class="s1">&#39;all&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>should you fail to set this option but set the flag PyFrac will automatically allow mesh extension in all directions.</p>
+<p>For this last case the number of elements is growing rapidly and computational costs might explode. To counter this
+problem we implemented the possibility to reduce the number of cells. The limiting parameter on the computational cost
+is the number of elements inside the propagating fracture (respectively the maximum number inside a fracture footprint
+for several fractures). By default we set the number of elements allowed inside a fracture to infinity such that no mesh
+reduction is performed. As not to coarsen the mesh to much, the user can set a maximum cell breadth (max hx). The
+initial aspect ratio of the cells is conserved such that a maximum breadth equivalently fixes a maximum cell height. If
+a mesh reduction would lead to a coarsening with cell height or breadth bigger than the defined maximum, we disable mesh
+reduction from this point on. The following code allows to set the reduction factor (factor by which the number of cells
+in x (nx) and y (ny) will be divided) to 1.5, the maximum number of cells inside the fracture to 1000, and the maximum
+breadth of the cell to 50 [m].</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">simulProp</span><span class="o">.</span><span class="n">meshReductionFactor</span> <span class="o">=</span> <span class="mf">1.5</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">maxElementIn</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">maxCellSize</span> <span class="o">=</span> <span class="mi">50</span>
+</pre></div>
+</div>
+<section id="examples-of-different-mesh-extensions">
+<h3>Examples of different mesh extensions<a class="headerlink" href="#examples-of-different-mesh-extensions" title="Permalink to this heading">¶</a></h3>
+<p>We illustrate the different re-meshing options by several examples as to familiarize the user with the different
+options. Our first example has its focus on a propagating dike. The following initial mesh and re-meshing properties
+are specified:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mesh</span> <span class="kn">import</span> <span class="n">CartesianMesh</span>
+<span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">SimulationProperties</span>
+
+<span class="c1"># creating mesh</span>
+<span class="n">Mesh</span> <span class="o">=</span> <span class="n">CartesianMesh</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">31</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>
+
+<span class="c1"># define the re-meshing parameters</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_mesh_extension_factor</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_mesh_extension_direction</span><span class="p">([</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="s1">&#39;horizontal&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>In words, we start a simulation where we allow the fracture to extend in horizontal (positive and negative x direction)
+as well as to the top (in positive y direction). The mesh extension factor is set to 1.5 in all directions and the
+re-meshing factor for mesh compression remains at its default value of 2.</p>
+<a class="reference internal image-reference" href="_images/MeshCompression_allDirections.png"><img alt="_images/MeshCompression_allDirections.png" src="_images/MeshCompression_allDirections.png" style="width: 45%;" /></a>
+<a class="reference internal image-reference" href="_images/MeshCompression_allDirections_after.png"><img alt="_images/MeshCompression_allDirections_after.png" src="_images/MeshCompression_allDirections_after.png" style="width: 45%;" /></a>
+<p>From the left picture we see that in the next time step all four boundaries will be reached (note that we re-mesh when
+the front enters the cell just inside of the boundary layer). As this activates the condition of four boundaries reached
+at the same moment the domain will be compressed. You can see the result on the right picture. The number of elements
+remains the same (31x31), whereas the surface covered has doubled in breadth and height [-0.02, 0.02, -0.02, 0.02].</p>
+<p>To achieve the next configuration we skipped a extension of the mesh in positive y direction. After this extension, the
+mesh has the following dimensions: nx = 31, ny = 47, with dimensions [xmin = -0.02, xmax = 0.02, ymin = -0.02, ymax =
+0.04]. We show now that the fracture reaches the boundary at three locations, in negative and positive x direction and
+on the bottom (negative y). This has the following consequences: The horizontal extension will take place in both
+directions. As there is a boundary reached where no extension is enabled (negative y) the entire new domain will then be
+compressed (see point 1 on mesh extension). The dimensions after re-meshing (see right picture) are: nx = 63, ny = 47,
+[xmin = -0.08, xmax = 0.08, ymin = -0.05, ymax = 0.07].</p>
+<a class="reference internal image-reference" href="_images/pre_HorExt_Comp.png"><img alt="_images/pre_HorExt_Comp.png" src="_images/pre_HorExt_Comp.png" style="width: 45%;" /></a>
+<a class="reference internal image-reference" href="_images/after_HorExt_comp.png"><img alt="_images/after_HorExt_comp.png" src="_images/after_HorExt_comp.png" style="width: 45%;" /></a>
+<p>The next re-meshing in this situation is because the fracture reaches the lower boundary. As this boundary is not
+allowed to perform mesh extension a simple mesh compression like in the first example is performed (see again point 1 on
+mesh extension). Figures before and after this compression are shown hereafter. The new dimensions are: nx = 63, ny =
+47, [xmin = -0.16, xmax = 0.16, ymin = -0.11, ymax = 0.13].</p>
+<a class="reference internal image-reference" href="_images/pre_Comp_LowB.png"><img alt="_images/pre_Comp_LowB.png" src="_images/pre_Comp_LowB.png" style="width: 45%;" /></a>
+<a class="reference internal image-reference" href="_images/after_Comp_LowB.png"><img alt="_images/after_Comp_LowB.png" src="_images/after_Comp_LowB.png" style="width: 45%;" /></a>
+<p>Finally, the fracture starts growing vertically and only reaches the upper boundary. As there mesh extension is allowed,
+we will simply add elements on the positive y-direction and the new mesh is given by:  nx = 63, ny = 71, [xmin = -0.16,
+xmax = 0.16, ymin = -0.11, ymax = 0.25].</p>
+<a class="reference internal image-reference" href="_images/pre_ExtTop.png"><img alt="_images/pre_ExtTop.png" src="_images/pre_ExtTop.png" style="width: 45%;" /></a>
+<a class="reference internal image-reference" href="_images/after_ExtTop.png"><img alt="_images/after_ExtTop.png" src="_images/after_ExtTop.png" style="width: 45%;" /></a>
+<p>This first example mainly shows the capabilities of the mesh extension and mesh compression re-meshing properties.</p>
+<p>We switch now to a second example where we want to highlight how the mesh reduction works. For this second example  we
+initiate the problem with the following re-meshing properties:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mesh</span> <span class="kn">import</span> <span class="n">CartesianMesh</span>
+<span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">SimulationProperties</span>
+
+<span class="c1"># creating mesh</span>
+<span class="n">Mesh</span> <span class="o">=</span> <span class="n">CartesianMesh</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">21</span><span class="p">)</span>
+
+<span class="c1"># define the re-meshing parameters</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">meshExtensionAllDir</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_mesh_extension_direction</span><span class="p">([</span><span class="s1">&#39;all&#39;</span><span class="p">])</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_mesh_extension_factor</span><span class="p">(</span><span class="mf">1.15</span><span class="p">)</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">maxElementIn</span> <span class="o">=</span> <span class="mi">750</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">maxCellSize</span> <span class="o">=</span> <span class="mi">50</span>
+</pre></div>
+</div>
+<p>In words, we start a simulation where we allow the fracture to extend in all directions and enable an extension even if
+all four boundaries get reached simultaneously. The mesh extension factor is set to 1.15 in all directions and the mesh
+reduction factor remains at its default value of 2. Once the number of cells inside the fracture reaches 750 or more, we
+will reduce the number of elements inside the domain. Finally, the maximum breadth of the cell is set to 50[m] and
+because cells are square (aspect ratio of 1) the maximum height is 50[m] as well. The initial dimensions of the mesh
+are: nx = 21, ny = 21, [xmin = -0.3, xmax = 0.3, ymin = -0.3, ymax = 0.3]. As our simulation is radial, we will reach
+all four boundaries simultaneously. With the given configuration this leads to a extension of the mesh in all directions
+and thus to the adding of elements on all boundaries.</p>
+<a class="reference internal image-reference" href="_images/pre_ExtAll.png"><img alt="_images/pre_ExtAll.png" src="_images/pre_ExtAll.png" style="width: 45%;" /></a>
+<a class="reference internal image-reference" href="_images/after_ExtAll.png"><img alt="_images/after_ExtAll.png" src="_images/after_ExtAll.png" style="width: 45%;" /></a>
+<p>The new dimensions of the mesh are: nx = 29, ny = 29, [xmin = -0.414, xmax = 0.414, ymin = -0.414, ymax = 0.414]. The
+simulation continues and after another extension reaches the point where the maximum number of cells inside the fracture
+footprint is reached (left figure).</p>
+<a class="reference internal image-reference" href="_images/pre_Reduction.png"><img alt="_images/pre_Reduction.png" src="_images/pre_Reduction.png" style="width: 45%;" /></a>
+<a class="reference internal image-reference" href="_images/after_Reduction.png"><img alt="_images/after_Reduction.png" src="_images/after_Reduction.png" style="width: 45%;" /></a>
+<p>We will now reduce the number of cells by the default factor of 2 in x and y. Before the reduction, the mesh has 37x37
+elements in total and extents of [xmin = -0.53, xmax = 0.53, ymin = -0.53, ymax = 0.53]. There are some subtle tricks
+ensuring that the mesh reduction will work. We encapsulate the details but simply inform the user that we add elements
+on all sides as to ensure that we are not reaching a boundary during mesh reduction (new mesh does not immediately
+require re-meshing). The new number of elements after mesh reduction is 19x19 and the domain is slightly bigger [xmin =
+-0.62, xmax = 0.62, ymin = -0.62, ymax = 0.62]. The import point of this operation is that the total number of elements
+has reduced from 1’369 to 361. This represents a significant reduction in computational cost. In turn the precision in
+the process is reduced as well. We recommend mesh reduction only for situations where the number of elements is larger
+than in this example and where the reduction will still ensure sufficient precision.</p>
+<p>Note that the interplay of extension and reduction will go on until the cell size becomes bigger or equal than 50[m].
+From this point on, mesh reduction will be disabled and the number of cells will only increase for an ongoing
+simulation.</p>
+</section>
+</section>
+<section id="running-the-regression-tests">
+<h2>Running the regression tests<a class="headerlink" href="#running-the-regression-tests" title="Permalink to this heading">¶</a></h2>
+<p>The regression test suite is a set of tests that are meant to check the proper behaviour of some internal functions. In order to run the tests, we need to make sure that the package pytest is installed in your machine. From the shell execute:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="go">pip install -U pytest</span>
+</pre></div>
+</div>
+<p>To run the tests point the shell to the main directory of PyFrac (i.e.: the one containing the folder named “regression_tests”) and run:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="go">pytest regression_tests/*</span>
+</pre></div>
+</div>
+</section>
+<section id="running-the-benchmarks">
+<h2>Running the benchmarks<a class="headerlink" href="#running-the-benchmarks" title="Permalink to this heading">¶</a></h2>
+<p>The benchmarks test suite is meant to check the code accuracy against analytical solutions and against a set of reference numerical solutions obtained with PyFrac itself.
+In order to run the tests, we need to make sure that the package pytest is installed in your machine. From the shell execute:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="go">pip install -U pytest</span>
+</pre></div>
+</div>
+<p>To run the tests point the shell to the main directory of PyFrac (i.e.: the one containing the folder named “regression_tests”) and run:</p>
+<div class="highlight-shell-session notranslate"><div class="highlight"><pre><span></span><span class="go">pytest benchmarks/test_simulations.py</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Running a Simulation</a><ul>
+<li><a class="reference internal" href="#meshing-during-simulations">Meshing during simulations</a><ul>
+<li><a class="reference internal" href="#examples-of-different-mesh-extensions">Examples of different mesh extensions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#running-the-regression-tests">Running the regression tests</a></li>
+<li><a class="reference internal" href="#running-the-benchmarks">Running the benchmarks</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="GettingStarted.html"
+                          title="previous chapter">Getting started</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="Visualization.html"
+                          title="next chapter">Post-processing and Visualization</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/RunningASimulation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Visualization.html" title="Post-processing and Visualization"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="GettingStarted.html" title="Getting started"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PyFrac 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Running a Simulation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016-2020, ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, Switzerland, Geo-Energy Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

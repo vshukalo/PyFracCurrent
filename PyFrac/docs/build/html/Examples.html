@@ -1,0 +1,790 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Examples &#8212; PyFrac 1.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/classic.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Code Reference Manual" href="codeReference.html" />
+    <link rel="prev" title="Post-processing and Visualization" href="Visualization.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="codeReference.html" title="Code Reference Manual"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Visualization.html" title="Post-processing and Visualization"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PyFrac 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Examples</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h1>
+<section id="penny-shaped-hydraulic-fracture-benchmark">
+<h2>Penny shaped hydraulic fracture benchmark<a class="headerlink" href="#penny-shaped-hydraulic-fracture-benchmark" title="Permalink to this heading">¶</a></h2>
+<p>We first demonstrate the accuracy of PyFrac on the case of a penny-shaped hydraulic fracture propagating in a uniform permeable medium. The fracture initially starts propagating in the viscosity dominated regime and gradually transitions to toughness and finally to leak-off dominated regime. For this case, we have a semi-analytical solution available (see <a class="reference external" href="https://books.google.ch/books/about/Fluid_driven_Penny_shaped_Fracture_in_El.html?id=a8wOtwAACAAJ&amp;redir_esc=y">[here]</a>). Here, we will perform a simulation with the following parameters:</p>
+<table class="docutils align-center">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameters</p></th>
+<th class="head"><p>Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(E^\prime\)</span> (plane strain modulus)</p></td>
+<td><p><span class="math notranslate nohighlight">\(35.2\textrm{GPa}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(K_{Ic}\)</span> (fracture toughness)</p></td>
+<td><p><span class="math notranslate nohighlight">\(0.156~MPa\sqrt{\textrm{m}}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(C_L\)</span> (Carter’s leak-off coefficient)</p></td>
+<td><p><span class="math notranslate nohighlight">\(0.5\times10^{-6}~m/\sqrt{\textrm{s}}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\mu\)</span> (viscosity)</p></td>
+<td><p><span class="math notranslate nohighlight">\(8.3\times10^{-5}~Pa\cdot s\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(Q\)</span> (injection rate)</p></td>
+<td><p><span class="math notranslate nohighlight">\(0.01\textrm{m}^{3}/\textrm{s}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>Lets start the simulation at 0.5 seconds. At this time, the fracture has a radius of about 2 meters. We will make a mesh on a square domain of [-5, 5, -5, 5] meters with 41 cells in both <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> directions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mesh</span> <span class="kn">import</span> <span class="n">CartesianMesh</span>
+
+<span class="c1"># creating mesh</span>
+<span class="n">Mesh</span> <span class="o">=</span> <span class="n">CartesianMesh</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next we setup the properties of the material by instantiating a <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.MaterialProperties</span></code> object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">MaterialProperties</span>
+
+<span class="c1"># solid properties</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.4</span>                            <span class="c1"># Poisson&#39;s ratio</span>
+<span class="n">youngs_mod</span> <span class="o">=</span> <span class="mf">3.3e10</span>                 <span class="c1"># Young&#39;s modulus</span>
+<span class="n">Eprime</span> <span class="o">=</span> <span class="n">youngs_mod</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">nu</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>   <span class="c1"># plane strain modulus</span>
+<span class="n">K1c</span> <span class="o">=</span> <span class="mf">5e5</span> <span class="o">/</span> <span class="p">(</span><span class="mi">32</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>       <span class="c1"># K&#39; = 5e5</span>
+<span class="n">Cl</span> <span class="o">=</span> <span class="mf">0.5e-6</span>                         <span class="c1"># Carter&#39;s leak off coefficient</span>
+
+<span class="c1"># material properties</span>
+<span class="n">Solid</span> <span class="o">=</span> <span class="n">MaterialProperties</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+                           <span class="n">Eprime</span><span class="p">,</span>
+                           <span class="n">K1c</span><span class="p">,</span>
+                           <span class="n">Carters_coef</span><span class="o">=</span><span class="n">Cl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After setting up the material properties, we next set up the properties of the fluid and its injection parameters by Instantiating the <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.FluidProperties</span></code> and  <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.InjectionProperties</span></code> classes. Also, to set the end time and the output folder, we will instantiate the <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.SimulationProperties</span></code> object. Since we do not have fine scale heterogeneities present in the material, We will use the explicit front advancing algorithm here (see <a class="reference external" href="https://onlinelibrary.wiley.com/doi/full/10.1002/nag.2898">[here]</a> for more on that). To avoid excessive saving of the data, we will save only every third time step.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">InjectionProperties</span><span class="p">,</span> <span class="n">FluidProperties</span><span class="p">,</span> <span class="n">SimulationProperties</span>
+
+<span class="c1"># injection parameters</span>
+<span class="n">Q0</span> <span class="o">=</span> <span class="mf">0.01</span>  <span class="c1"># injection rate</span>
+<span class="n">Injection</span> <span class="o">=</span> <span class="n">InjectionProperties</span><span class="p">(</span><span class="n">Q0</span><span class="p">,</span> <span class="n">Mesh</span><span class="p">)</span>
+
+<span class="c1"># fluid properties</span>
+<span class="n">viscosity</span> <span class="o">=</span> <span class="mf">0.001</span> <span class="o">/</span> <span class="mi">12</span>  <span class="c1"># mu&#39; =0.001</span>
+<span class="n">Fluid</span> <span class="o">=</span> <span class="n">FluidProperties</span><span class="p">(</span><span class="n">viscosity</span><span class="o">=</span><span class="n">viscosity</span><span class="p">)</span>
+
+<span class="c1"># simulation properties</span>
+<span class="n">simulProp</span> <span class="o">=</span> <span class="n">SimulationProperties</span><span class="p">()</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">finalTime</span> <span class="o">=</span> <span class="mf">1e7</span>                 <span class="c1"># the time at which the simulation stops</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_outputFolder</span><span class="p">(</span><span class="s2">&quot;./Data/MtoK_leakoff&quot;</span><span class="p">)</span> <span class="c1"># the disk address where the files are saved</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">outputEveryTS</span> <span class="o">=</span> <span class="mi">3</span>               <span class="c1"># the time after the output is generated (saving or plotting)</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">frontAdvancing</span> <span class="o">=</span> <span class="s1">&#39;explicit&#39;</span>     <span class="c1"># use explicit front advancing algorithm</span>
+</pre></div>
+</div>
+<p>We will start our simulation at 0.5 seconds after the start of injection. At this time, the fracture is propagating in viscosity dominated regime and we can initialize it with the viscosity dominated analytical solution. To do that, we will first instantiate the <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture_initialization.InitializationParameters</span></code> object and pass it to the constructor of <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture.Fracture</span></code> class. We will also setup the Controller with a <code class="xref py py-class docutils literal notranslate"><span class="pre">controller.Controller</span></code> object and run the simulation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fracture_initialization</span> <span class="kn">import</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">InitializationParameters</span>
+<span class="kn">from</span> <span class="nn">fracture</span> <span class="kn">import</span> <span class="n">Fracture</span>
+<span class="kn">from</span> <span class="nn">controller</span> <span class="kn">import</span> <span class="n">Controller</span>
+
+<span class="c1"># initializing fracture</span>
+<span class="n">Fr_geometry</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="s1">&#39;radial&#39;</span><span class="p">)</span>
+<span class="n">init_param</span> <span class="o">=</span> <span class="n">InitializationParameters</span><span class="p">(</span><span class="n">Fr_geometry</span><span class="p">,</span> <span class="n">regime</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># creating fracture object</span>
+<span class="n">Fr</span> <span class="o">=</span> <span class="n">Fracture</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+              <span class="n">init_param</span><span class="p">,</span>
+              <span class="n">Solid</span><span class="p">,</span>
+              <span class="n">Fluid</span><span class="p">,</span>
+              <span class="n">Injection</span><span class="p">,</span>
+              <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># create a Controller</span>
+<span class="n">controller</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">(</span><span class="n">Fr</span><span class="p">,</span>
+                        <span class="n">Solid</span><span class="p">,</span>
+                        <span class="n">Fluid</span><span class="p">,</span>
+                        <span class="n">Injection</span><span class="p">,</span>
+                        <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># run the simulation</span>
+<span class="n">controller</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Once the simulation is finished, or even when it is running, we can start visualizing the results. To do that, we first load the state of the fracture in the form of a list of <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture.Fracture</span></code> objects.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="s2">&quot;./Data/MtoK_leakoff&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To plot the evolution of radius of the fracture, we will use the <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_fracture_list()</span></code> function to plot the ‘d_mean’ variable. We will plot it in loglog scaling for better visualization. To do that, we will pass a <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.PlotProperties</span></code> object with the graph_scaling attribute set to ‘loglog’. The setting up of plot properties is, of course, optional.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># plotting efficiency</span>
+<span class="n">plot_prop</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">graph_scaling</span><span class="o">=</span><span class="s1">&#39;loglog&#39;</span><span class="p">,</span>
+                           <span class="n">line_style</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+<span class="n">Fig_eff</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                           <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;efficiency&#39;</span><span class="p">,</span>
+                           <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To compare the solution with the semi-analytical solution, We have precomputed the solution using a matlab <a class="reference external" href="https://datadryad.org/resource/doi:10.5061/dryad.gh469/1">[code]</a> and directly inserted in as numpy array.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1e7</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="c1"># solution taken from matlab code provided by Dontsov EV (2016)</span>
+<span class="n">eff_analytical</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mf">0.9923</span><span class="p">,</span> <span class="mf">0.9904</span><span class="p">,</span> <span class="mf">0.9880</span><span class="p">,</span> <span class="mf">0.9850</span><span class="p">,</span> <span class="mf">0.9812</span><span class="p">,</span> <span class="mf">0.9765</span><span class="p">,</span> <span class="mf">0.9708</span><span class="p">,</span> <span class="mf">0.9636</span><span class="p">,</span> <span class="mf">0.9547</span><span class="p">,</span> <span class="mf">0.9438</span><span class="p">,</span> <span class="mf">0.9305</span><span class="p">,</span>
+                             <span class="mf">0.9142</span><span class="p">,</span> <span class="mf">0.8944</span><span class="p">,</span> <span class="mf">0.8706</span><span class="p">,</span> <span class="mf">0.8423</span><span class="p">,</span> <span class="mf">0.8089</span><span class="p">,</span> <span class="mf">0.7700</span><span class="p">,</span> <span class="mf">0.7256</span><span class="p">,</span> <span class="mf">0.6757</span><span class="p">,</span> <span class="mf">0.6209</span><span class="p">,</span> <span class="mf">0.5622</span><span class="p">,</span> <span class="mf">0.5011</span><span class="p">,</span>
+                             <span class="mf">0.4393</span><span class="p">,</span> <span class="mf">0.3789</span><span class="p">,</span> <span class="mf">0.3215</span><span class="p">,</span> <span class="mf">0.2688</span><span class="p">,</span> <span class="mf">0.2218</span><span class="p">,</span> <span class="mf">0.1809</span><span class="p">,</span> <span class="mf">0.1461</span><span class="p">,</span> <span class="mf">0.1171</span><span class="p">])</span>
+<span class="n">ax_eff</span> <span class="o">=</span> <span class="n">Fig_eff</span><span class="o">.</span><span class="n">get_axes</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">ax_eff</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">eff_analytical</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;semi-analytical fracturing efficiency&#39;</span><span class="p">)</span>
+<span class="n">ax_eff</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Fracture radius is plotted in the same way</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Fig_r</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                           <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;d_mean&#39;</span><span class="p">,</span>
+                           <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop</span><span class="p">)</span>
+
+<span class="c1"># solution taken from matlab code provided by Dontsov EV (2016)</span>
+<span class="n">r_analytical</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mf">0.0035</span><span class="p">,</span> <span class="mf">0.0046</span><span class="p">,</span> <span class="mf">0.0059</span><span class="p">,</span> <span class="mf">0.0076</span><span class="p">,</span> <span class="mf">0.0099</span><span class="p">,</span> <span class="mf">0.0128</span><span class="p">,</span> <span class="mf">0.0165</span><span class="p">,</span> <span class="mf">0.0212</span><span class="p">,</span> <span class="mf">0.0274</span><span class="p">,</span> <span class="mf">0.0352</span><span class="p">,</span> <span class="mf">0.0453</span><span class="p">,</span>
+                           <span class="mf">0.0581</span><span class="p">,</span> <span class="mf">0.0744</span><span class="p">,</span> <span class="mf">0.0951</span><span class="p">,</span> <span class="mf">0.1212</span><span class="p">,</span> <span class="mf">0.1539</span><span class="p">,</span> <span class="mf">0.1948</span><span class="p">,</span> <span class="mf">0.2454</span><span class="p">,</span> <span class="mf">0.3075</span><span class="p">,</span> <span class="mf">0.3831</span><span class="p">,</span> <span class="mf">0.4742</span><span class="p">,</span> <span class="mf">0.5829</span><span class="p">,</span>
+                           <span class="mf">0.7114</span><span class="p">,</span> <span class="mf">0.8620</span><span class="p">,</span> <span class="mf">1.0370</span><span class="p">,</span> <span class="mf">1.2395</span><span class="p">,</span> <span class="mf">1.4726</span><span class="p">,</span> <span class="mf">1.7406</span><span class="p">,</span> <span class="mf">2.0483</span><span class="p">,</span> <span class="mf">2.4016</span><span class="p">])</span><span class="o">*</span><span class="mf">1e3</span>
+<span class="n">ax_r</span> <span class="o">=</span> <span class="n">Fig_r</span><span class="o">.</span><span class="n">get_axes</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">ax_r</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">r_analytical</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;semi-anlytical radius&#39;</span><span class="p">)</span>
+<span class="n">ax_r</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="height-contained-hydraulic-fracture">
+<h2>Height contained hydraulic fracture<a class="headerlink" href="#height-contained-hydraulic-fracture" title="Permalink to this heading">¶</a></h2>
+<p>This example simulates a hydraulic fracture propagating in a layer bounded with high stress layers from top and bottom, causing its height to be restricted to the height of the middle layer. The top and bottom layers have a confining stress of <span class="math notranslate nohighlight">\(7.5\textrm{Mpa}\)</span>, while the middle layer has a confining stress of <span class="math notranslate nohighlight">\(1\textrm{MPa}\)</span>. The fracture initially propagates as a radial fracture in the middle layer until it hits the high stress layers on the top and bottom. From then onwards, it propagates with the fixed height of the middle layer. The parameters used in the simulation are as follows:</p>
+<table class="docutils align-center">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramters</p></th>
+<th class="head"><p>Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>plane strain modulus</p></td>
+<td><p><span class="math notranslate nohighlight">\(35.2\textrm{GPa}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>fracture toughness</p></td>
+<td><p><span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>viscosity</p></td>
+<td><p><span class="math notranslate nohighlight">\(1.1\times10^{-3}\textrm{Pa.s}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>injection rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(0.001\textrm{m}^{3}/\textrm{s}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>confinning stress top &amp; bottom layers</p></td>
+<td><p><span class="math notranslate nohighlight">\(7.5\textrm{MPa}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>confinning stress middle layer</p></td>
+<td><p><span class="math notranslate nohighlight">\(1\textrm{MPa}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>Let us start by defining mesh. We are given the height of the middle layer to be 7 meters. Since we also want to simulate the early time of the propagation, when the fracture is radial, we start with a rectangular domain with dimensions of [-20, 20, -2.3, 2.3] meters. As the fracture will grow and reach the end of the domain along vertical axis, a re-meshing will be done to double the size of the domain to [-40, 40, -4.6, 4.6]. Since we want the simulation to take small time to finish, we discretize the domain relatively coarsely with 71 cells in the <span class="math notranslate nohighlight">\(x\)</span> direction and 15 cells in the <span class="math notranslate nohighlight">\(y\)</span> direction. This will result in slightly less accurate results. Of course, running the simulation with higher resolution will increase the accuracy of the solution.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mesh</span> <span class="kn">import</span> <span class="n">CartesianMesh</span>
+
+<span class="c1"># creating mesh</span>
+<span class="n">Mesh</span> <span class="o">=</span> <span class="n">CartesianMesh</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mf">2.3</span><span class="p">,</span> <span class="mi">71</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next we setup the properties of the material by instantiating a <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.MaterialProperties</span></code> object. The material has uniform properties apart from the spatially varying confining stress, which is higher in the top and bottom layers. There are two possibilities to set spatially varying variables. We can either provide an array with the size of the mesh, giving them in each of the cell of the mesh. This will be problematic in case of re-meshing as the coordinates of the cells change when re-meshing is done. The second possibility is to provide a function giving the variable for the given set of coordinates. This function is evaluated on each re-meshing to get the variable on each cell of the new mesh. For this simulation, we set the spatially varying confining stress by providing the confining_stress_func argument while instantiating the <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.MaterialProperties</span></code> object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">MaterialProperties</span>
+
+<span class="c1"># solid properties</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.4</span>                            <span class="c1"># Poisson&#39;s ratio</span>
+<span class="n">youngs_mod</span> <span class="o">=</span> <span class="mf">3.3e10</span>                 <span class="c1"># Young&#39;s modulus</span>
+<span class="n">Eprime</span> <span class="o">=</span> <span class="n">youngs_mod</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">nu</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># plane strain modulus</span>
+<span class="n">K_Ic</span> <span class="o">=</span> <span class="mi">0</span>                            <span class="c1"># fracture toughness of the material</span>
+
+<span class="k">def</span> <span class="nf">sigmaO_func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; The function providing the confining stress&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">7.5e6</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1e6</span>
+
+<span class="n">Solid</span> <span class="o">=</span> <span class="n">MaterialProperties</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+                           <span class="n">Eprime</span><span class="p">,</span>
+                           <span class="n">K_Ic</span><span class="p">,</span>
+                           <span class="n">confining_stress_func</span><span class="o">=</span><span class="n">sigmaO_func</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After setting up the material properties, we next set up the properties of the fluid and its injection parameters by Instantiating the <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.FluidProperties</span></code> and  <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.InjectionProperties</span></code> classes. Also, to set the end time and the output folder, we will instantiate the <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.SimulationProperties</span></code> object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">InjectionProperties</span><span class="p">,</span> <span class="n">FluidProperties</span><span class="p">,</span> <span class="n">SimulationProperties</span>
+
+<span class="c1"># fluid properties</span>
+<span class="n">Fluid</span> <span class="o">=</span> <span class="n">FluidProperties</span><span class="p">(</span><span class="n">viscosity</span><span class="o">=</span><span class="mf">1.1e-3</span><span class="p">)</span>
+
+<span class="c1"># injection parameters</span>
+<span class="n">Q0</span> <span class="o">=</span> <span class="mf">0.001</span>  <span class="c1"># injection rate</span>
+<span class="n">Injection</span> <span class="o">=</span> <span class="n">InjectionProperties</span><span class="p">(</span><span class="n">Q0</span><span class="p">,</span> <span class="n">Mesh</span><span class="p">)</span>
+
+<span class="c1"># simulation properties</span>
+<span class="n">simulProp</span> <span class="o">=</span> <span class="n">SimulationProperties</span><span class="p">()</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">finalTime</span> <span class="o">=</span> <span class="mf">145.</span>              <span class="c1"># the time at which the simulation stops</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">bckColor</span> <span class="o">=</span> <span class="s1">&#39;sigma0&#39;</span>           <span class="c1"># setting the parameter according to which the mesh is color coded</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_outputFolder</span><span class="p">(</span><span class="s2">&quot;./Data/height_contained&quot;</span><span class="p">)</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">plotVar</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;footprint&#39;</span><span class="p">]</span>       <span class="c1"># plotting footprint</span>
+</pre></div>
+</div>
+<p>We will start our simulation with a fracture of 1.3 meters radius. Since we have zero toughness, we can initialize it in the viscosity dominated regime. To do that, we will first instantiate the <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture_initialization.InitializationParameters</span></code> object and pass it to the constructor of <code class="xref py py-class docutils literal notranslate"><span class="pre">fracture.Fracture</span></code> class. We will also setup the Controller with a <code class="xref py py-class docutils literal notranslate"><span class="pre">controller.Controller</span></code> object and run the simulation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fracture_initialization</span> <span class="kn">import</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">InitializationParameters</span>
+<span class="kn">from</span> <span class="nn">fracture</span> <span class="kn">import</span> <span class="n">Fracture</span>
+<span class="kn">from</span> <span class="nn">controller</span> <span class="kn">import</span> <span class="n">Controller</span>
+
+<span class="c1"># initializing fracture</span>
+<span class="n">Fr_geometry</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="s1">&#39;radial&#39;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">1.3</span><span class="p">)</span>
+<span class="n">init_param</span> <span class="o">=</span> <span class="n">InitializationParameters</span><span class="p">(</span><span class="n">Fr_geometry</span><span class="p">,</span> <span class="n">regime</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+
+<span class="c1"># creating fracture object</span>
+<span class="n">Fr</span> <span class="o">=</span> <span class="n">Fracture</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+              <span class="n">init_param</span><span class="p">,</span>
+              <span class="n">Solid</span><span class="p">,</span>
+              <span class="n">Fluid</span><span class="p">,</span>
+              <span class="n">Injection</span><span class="p">,</span>
+              <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># create a Controller</span>
+<span class="n">controller</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">(</span><span class="n">Fr</span><span class="p">,</span>
+                        <span class="n">Solid</span><span class="p">,</span>
+                        <span class="n">Fluid</span><span class="p">,</span>
+                        <span class="n">Injection</span><span class="p">,</span>
+                        <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># run the simulation</span>
+<span class="n">controller</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Once the simulation is finished, or even when it is running, we can start visualizing the results. To do that, we first load the state of the fracture in the form of a list of :py:class`fracture.Fracture` objects. From the list, we can extract any fracture variable we want to visualize. Here we first extract the times at which the state of the fracture was evaluated.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="s2">&quot;./Data/height_contained&quot;</span><span class="p">)</span>
+<span class="n">time_srs</span> <span class="o">=</span> <span class="n">get_fracture_variable</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Lets first visualize the evolution of the fracture length with time. We can do that using the <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_fracture_list()</span></code> function to plot the ‘d_max’ variable. We will plot it in loglog scaling for better visualization. To do that, we will pass a <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.PlotProperties</span></code> object with the graph_scaling attribute set to ‘loglog’. For better legends of the plot, we will pass a <code class="xref py py-class docutils literal notranslate"><span class="pre">properties.LabelProperties</span></code> object whose legend variable is set to ‘fracture length’. The setting up of plot properties and labels is, of course, optional.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">label</span> <span class="o">=</span> <span class="n">LabelProperties</span><span class="p">(</span><span class="s1">&#39;d_max&#39;</span><span class="p">)</span>
+<span class="n">label</span><span class="o">.</span><span class="n">legend</span> <span class="o">=</span> <span class="s1">&#39;fracture length&#39;</span>
+
+<span class="n">plot_prop</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">line_style</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span>
+                           <span class="n">graph_scaling</span><span class="o">=</span><span class="s1">&#39;loglog&#39;</span><span class="p">)</span>
+
+<span class="n">Fig_r</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>            <span class="c1"># plotting fracture length</span>
+                           <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;d_max&#39;</span><span class="p">,</span>
+                           <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop</span><span class="p">,</span>
+                           <span class="n">labels</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Lets compare the fracture length with the analytical solutions for the radial and PKN fractures. To do that, we will make use of the <code class="xref py py-func docutils literal notranslate"><span class="pre">visualization.plot_analytical_solution()</span></code> function. To superimpose the analytical solutions on the figure we already have generated for the fracture radius (<code class="code docutils literal notranslate"><span class="pre">Fig_r</span></code>), we pass it to the function plotting the analytical solution using the <code class="code docutils literal notranslate"><span class="pre">fig</span></code> argument.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">label</span><span class="o">.</span><span class="n">legend</span> <span class="o">=</span> <span class="s1">&#39;fracture length analytical (PKN)&#39;</span>
+<span class="n">Fig_r</span> <span class="o">=</span> <span class="n">plot_analytical_solution</span><span class="p">(</span><span class="s1">&#39;PKN&#39;</span><span class="p">,</span>
+                                  <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;d_max&#39;</span><span class="p">,</span>
+                                  <span class="n">mat_prop</span><span class="o">=</span><span class="n">Solid</span><span class="p">,</span>
+                                  <span class="n">inj_prop</span><span class="o">=</span><span class="n">Injection</span><span class="p">,</span>
+                                  <span class="n">fluid_prop</span><span class="o">=</span><span class="n">Fluid</span><span class="p">,</span>
+                                  <span class="n">fig</span><span class="o">=</span><span class="n">Fig_r</span><span class="p">,</span>
+                                  <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">,</span>
+                                  <span class="n">h</span><span class="o">=</span><span class="mf">7.0</span><span class="p">,</span>
+                                  <span class="n">labels</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+<span class="n">label</span><span class="o">.</span><span class="n">legend</span> <span class="o">=</span> <span class="s1">&#39;radius analytical (viscosity dominated)&#39;</span>
+<span class="n">plot_prop</span><span class="o">.</span><span class="n">lineColorAnal</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span>
+<span class="n">Fig_r</span> <span class="o">=</span> <span class="n">plot_analytical_solution</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                                  <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;d_max&#39;</span><span class="p">,</span>
+                                  <span class="n">mat_prop</span><span class="o">=</span><span class="n">Solid</span><span class="p">,</span>
+                                  <span class="n">inj_prop</span><span class="o">=</span><span class="n">Injection</span><span class="p">,</span>
+                                  <span class="n">fig</span><span class="o">=</span><span class="n">Fig_r</span><span class="p">,</span>
+                                  <span class="n">fluid_prop</span><span class="o">=</span><span class="n">Fluid</span><span class="p">,</span>
+                                  <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">,</span>
+                                  <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop</span><span class="p">,</span>
+                                  <span class="n">labels</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/fracture_length_PKN.png"><img alt="_images/fracture_length_PKN.png" class="align-center" src="_images/fracture_length_PKN.png" style="width: 512.0px; height: 380.8px;" /></a>
+<p>Expectedly, the solution first follows the viscosity dominated radial fracture solution and then transitions to height contained regime for which the classical PKN cite{PKN61} solution is applicable. The error introduced in the solution at about 2 seconds is due to re-meshing.</p>
+<p>There are many fracture variables that we can plot now (you can see a list of variables that can be plotted in the Postprocessing and Visualization section). lets plot the footprint of the fracture in 3D and super impose the viscosity dominated and PKN analytical solutions. We will first load the saved fracture objects at the times at which we want to plot the footprint.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="s2">&quot;./Data/height_contained&quot;</span><span class="p">,</span>
+                                     <span class="n">time_srs</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">110</span><span class="p">,</span> <span class="mi">140</span><span class="p">]))</span>
+<span class="n">time_srs</span> <span class="o">=</span> <span class="n">get_fracture_variable</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                                 <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that the fractures closest to the given times are loaded as the solutions are available only at the time steps at which the fractures were saved. The exact times are obtained from the loaded fracture list, at which the analytical solutions will be evaluated.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">plot_prop_mesh</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">text_size</span><span class="o">=</span><span class="mf">1.7</span><span class="p">,</span> <span class="n">use_tex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">Fig_Fr</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>                           <span class="c1">#plotting mesh</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;mesh&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3D&#39;</span><span class="p">,</span>
+                            <span class="n">backGround_param</span><span class="o">=</span><span class="s1">&#39;sigma0&#39;</span><span class="p">,</span>
+                            <span class="n">mat_properties</span><span class="o">=</span><span class="n">properties</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop_mesh</span><span class="p">)</span>
+
+<span class="n">Fig_Fr</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>                           <span class="c1">#plotting footprint</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;footprint&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3D&#39;</span><span class="p">,</span>
+                            <span class="n">fig</span><span class="o">=</span><span class="n">Fig_Fr</span><span class="p">)</span>
+
+<span class="n">Fig_Fr</span> <span class="o">=</span> <span class="n">plot_analytical_solution</span><span class="p">(</span><span class="s1">&#39;PKN&#39;</span><span class="p">,</span>                       <span class="c1">#plotting footprint analytical</span>
+                                  <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;footprint&#39;</span><span class="p">,</span>
+                                  <span class="n">mat_prop</span><span class="o">=</span><span class="n">Solid</span><span class="p">,</span>
+                                  <span class="n">inj_prop</span><span class="o">=</span><span class="n">Injection</span><span class="p">,</span>
+                                  <span class="n">fluid_prop</span><span class="o">=</span><span class="n">Fluid</span><span class="p">,</span>
+                                  <span class="n">fig</span><span class="o">=</span><span class="n">Fig_Fr</span><span class="p">,</span>
+                                  <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3D&#39;</span><span class="p">,</span>
+                                  <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">[</span><span class="mi">2</span><span class="p">:],</span>
+                                  <span class="n">h</span><span class="o">=</span><span class="mf">7.0</span><span class="p">)</span>
+<span class="n">plt_prop</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">line_color_anal</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">)</span>
+<span class="n">Fig_Fr</span> <span class="o">=</span> <span class="n">plot_analytical_solution</span><span class="p">(</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
+                                  <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;footprint&#39;</span><span class="p">,</span>
+                                  <span class="n">mat_prop</span><span class="o">=</span><span class="n">Solid</span><span class="p">,</span>
+                                  <span class="n">inj_prop</span><span class="o">=</span><span class="n">Injection</span><span class="p">,</span>
+                                  <span class="n">fluid_prop</span><span class="o">=</span><span class="n">Fluid</span><span class="p">,</span>
+                                  <span class="n">fig</span><span class="o">=</span><span class="n">Fig_Fr</span><span class="p">,</span>
+                                  <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3D&#39;</span><span class="p">,</span>
+                                  <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span>
+                                  <span class="n">plot_prop</span><span class="o">=</span><span class="n">plt_prop</span><span class="p">)</span>
+
+<span class="n">plot_prop</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">text_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>             <span class="c1">#plotting width</span>
+<span class="n">Fig_Fr</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3D&#39;</span><span class="p">,</span>
+                            <span class="n">fig</span><span class="o">=</span><span class="n">Fig_Fr</span><span class="p">,</span>
+                            <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">Fig_Fr</span><span class="o">.</span><span class="n">get_axes</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">view_init</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="o">-</span><span class="mi">114</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/footprint_PKN.png"><img alt="_images/footprint_PKN.png" class="align-center" src="_images/footprint_PKN.png" style="width: 1800px; height: 400px;" /></a>
+</section>
+<section id="fracture-closure">
+<h2>Fracture closure<a class="headerlink" href="#fracture-closure" title="Permalink to this heading">¶</a></h2>
+<p>In this example, we show the capability of PyFrac to handle fracture closure. The simulation consists of a 100 minutes injection of water into a rock with the following parameters</p>
+<table class="docutils align-center">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramters</p></th>
+<th class="head"><p>Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>plane strain modulus</p></td>
+<td><p><span class="math notranslate nohighlight">\(42.67\textrm{GPa}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>fracture toughness</p></td>
+<td><p><span class="math notranslate nohighlight">\(0.5\textrm{Mpa}\sqrt{\textrm{m}}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>Carter’s leak off coefficient</p></td>
+<td><p><span class="math notranslate nohighlight">\(10^{-6}\textrm{m}/\sqrt{\textrm{s}}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>viscosity</p></td>
+<td><p><span class="math notranslate nohighlight">\(1.1\times10^{-3}\textrm{Pa.s}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>injection rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(0.001\textrm{m}^{3}/\textrm{s}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>confining stress top &amp; bottom layers</p></td>
+<td><p><span class="math notranslate nohighlight">\(5.25\textrm{MPa}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>confining stress middle layer</p></td>
+<td><p><span class="math notranslate nohighlight">\(5\textrm{MPa}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>The fracture is initiated in a layer that is bounded by layers having higher confining stress. The layer on top is set to have a small height, allowing the fracture to break through and accelerate upwards in another layer.
+We can proceed in the same manner as the previous examples. Lets make a mesh and define material, fluid and injection properties.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">mesh</span> <span class="kn">import</span> <span class="n">CartesianMesh</span>
+<span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">MaterialProperties</span><span class="p">,</span> <span class="n">FluidProperties</span><span class="p">,</span> <span class="n">InjectionProperties</span><span class="p">,</span> <span class="n">SimulationProperties</span>
+
+<span class="c1"># creating mesh</span>
+<span class="n">Mesh</span> <span class="o">=</span> <span class="n">CartesianMesh</span><span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="mi">66</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">27</span><span class="p">)</span>
+
+<span class="c1"># solid properties</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.4</span>                            <span class="c1"># Poisson&#39;s ratio</span>
+<span class="n">youngs_mod</span> <span class="o">=</span> <span class="mf">4e10</span>                   <span class="c1"># Young&#39;s modulus</span>
+<span class="n">Eprime</span> <span class="o">=</span> <span class="n">youngs_mod</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">nu</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># plane strain modulus</span>
+<span class="n">K_Ic</span> <span class="o">=</span> <span class="mf">5.0e5</span>                        <span class="c1"># fracture toughness</span>
+
+<span class="k">def</span> <span class="nf">sigmaO_func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This function provides the confining stress over the domain&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">5.25e6</span>
+    <span class="k">elif</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">50</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">5.25e6</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">5.e6</span>
+
+<span class="c1"># material properties</span>
+<span class="n">Solid</span> <span class="o">=</span> <span class="n">MaterialProperties</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+                           <span class="n">Eprime</span><span class="p">,</span>
+                           <span class="n">toughness</span><span class="o">=</span><span class="n">K_Ic</span><span class="p">,</span>
+                           <span class="n">confining_stress_func</span><span class="o">=</span><span class="n">sigmaO_func</span><span class="p">,</span>
+                           <span class="n">Carters_coef</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+
+<span class="c1"># injection parameters</span>
+<span class="n">Q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6000</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+<span class="n">Injection</span> <span class="o">=</span> <span class="n">InjectionProperties</span><span class="p">(</span><span class="n">Q0</span><span class="p">,</span>
+                                <span class="n">Mesh</span><span class="p">,</span>
+                                <span class="n">source_coordinates</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">])</span>
+
+<span class="c1"># fluid properties</span>
+<span class="n">Fluid</span> <span class="o">=</span> <span class="n">FluidProperties</span><span class="p">(</span><span class="n">viscosity</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that we have provided coordinates of the injection point, which if not provided, are assumed to be at (0, 0). Next we will define the simulation properties. Since we expect to have fracture closure which is a stiffer problem, we increase the maximum number of iterations for the elasto-hydrodynamic solver and decrease the time step pre-factor.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fracture</span> <span class="kn">import</span> <span class="n">Fracture</span>
+<span class="kn">from</span> <span class="nn">controller</span> <span class="kn">import</span> <span class="n">Controller</span>
+<span class="kn">from</span> <span class="nn">fracture_initialization</span> <span class="kn">import</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">InitializationParameters</span>
+
+<span class="c1"># simulation properties</span>
+<span class="n">simulProp</span> <span class="o">=</span> <span class="n">SimulationProperties</span><span class="p">()</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">finalTime</span> <span class="o">=</span> <span class="mf">1e5</span>                       <span class="c1"># the time at which the simulation stops</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_outputFolder</span><span class="p">(</span><span class="s2">&quot;./Data/fracture_closure&quot;</span><span class="p">)</span> <span class="c1"># the disk address where the files are saved</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">bckColor</span> <span class="o">=</span> <span class="s1">&#39;confining stress&#39;</span>         <span class="c1"># setting the parameter for the mesh color coding</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">plotTSJump</span> <span class="o">=</span> <span class="mi">4</span>                        <span class="c1"># set to plot every four time steps</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">plotVar</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;lk&#39;</span><span class="p">,</span> <span class="s1">&#39;footprint&#39;</span><span class="p">]</span>    <span class="c1"># setting the parameters that will be plotted</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">tmStpPrefactor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6000</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]])</span> <span class="c1"># decreasing the time step pre-factor after 6000s</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">maxSolverItrs</span> <span class="o">=</span> <span class="mi">120</span>                   <span class="c1"># increase maximum iterations for the elastohydrodynamic solver</span>
+
+<span class="c1"># initialization parameters</span>
+<span class="n">Fr_geometry</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;radial&#39;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">init_param</span> <span class="o">=</span> <span class="n">InitializationParameters</span><span class="p">(</span><span class="n">Fr_geometry</span><span class="p">,</span> <span class="n">regime</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+
+<span class="c1"># creating fracture object</span>
+<span class="n">Fr</span> <span class="o">=</span> <span class="n">Fracture</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+              <span class="n">init_param</span><span class="p">,</span>
+              <span class="n">Solid</span><span class="p">,</span>
+              <span class="n">Fluid</span><span class="p">,</span>
+              <span class="n">Injection</span><span class="p">,</span>
+              <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># create a Controller</span>
+<span class="n">controller</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">(</span><span class="n">Fr</span><span class="p">,</span>
+                        <span class="n">Solid</span><span class="p">,</span>
+                        <span class="n">Fluid</span><span class="p">,</span>
+                        <span class="n">Injection</span><span class="p">,</span>
+                        <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># run the simulation</span>
+<span class="n">controller</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>To visualize the results, lets first plot the fracture footprint at <span class="math notranslate nohighlight">\(t=[240, 1028, 2211, 3322, 4644, 6000, 10388]\)</span> seconds.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c1"># loading simulation results</span>
+<span class="n">time_srs</span> <span class="o">=</span> <span class="p">[</span><span class="mi">230</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2200</span><span class="p">,</span> <span class="mi">3200</span><span class="p">,</span> <span class="mi">4500</span><span class="p">,</span> <span class="mi">6000</span><span class="p">,</span> <span class="mi">10388</span><span class="p">]</span>
+<span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="s2">&quot;./Data/fracture_closure&quot;</span><span class="p">,</span>
+                                     <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">)</span>
+
+<span class="c1"># plot footprint</span>
+<span class="n">plt_prop</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">color_map</span><span class="o">=</span><span class="s1">&#39;Wistia&#39;</span><span class="p">,</span> <span class="n">line_width</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">Fig_FP</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;mesh&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span>
+                            <span class="n">mat_properties</span><span class="o">=</span><span class="n">Solid</span><span class="p">,</span>
+                            <span class="n">backGround_param</span><span class="o">=</span><span class="s1">&#39;confining stress&#39;</span><span class="p">,</span>
+                            <span class="n">plot_prop</span><span class="o">=</span><span class="n">plt_prop</span>
+                            <span class="p">)</span>
+<span class="n">plot_prop1</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">plot_FP_time</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">Fig_FP</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;footprint&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span>
+                            <span class="n">fig</span><span class="o">=</span><span class="n">Fig_FP</span><span class="p">,</span>
+                            <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop1</span><span class="p">)</span>
+<span class="n">Fig_FP</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="_images/closure_footprint.png"><img alt="_images/closure_footprint.png" class="align-center" src="_images/closure_footprint.png" style="width: 556.0px; height: 452.8px;" /></a>
+<p>It can be seen that the fracture continues to slowly grow even after the injection has stopped at 6000s until it comes to a complete stop at 10388s. Due to fluid leak off, the fracture starts to close with time starting from 7672s. Lets animate the results to see the fracture propagating initially and then closing due to leak off.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="s2">&quot;./Data/fracture_closure&quot;</span><span class="p">,</span>
+                                  <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">)</span>
+
+<span class="n">animate_simulation_results</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="lateral-spreading-of-a-dyke-at-neutral-buoyancy">
+<h2>Lateral spreading of a dyke at neutral buoyancy<a class="headerlink" href="#lateral-spreading-of-a-dyke-at-neutral-buoyancy" title="Permalink to this heading">¶</a></h2>
+<p>This example demonstrates the capability of PyFrac to simulate buoyancy driven fractures. Here, we will simulate propagation of a dyke after a pulse injection of basaltic magma at a depth of 4.2Km. The magma fractures surrounding rock towards the surface as a dyke and  hits a layer of less dense rock  at a depth of 1.3Km, causing it to attain neutral buoyancy. As a result, the propagation is arrested vertically and the dyke spreads horizontally. We will use the following parameters taken from Traversa et al. - JGR-B (2010)</p>
+<table class="docutils align-center">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramters</p></th>
+<th class="head"><p>Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Young’s modulus</p></td>
+<td><p><span class="math notranslate nohighlight">\(1.125\textrm{GPa}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>fracture toughness</p></td>
+<td><p><span class="math notranslate nohighlight">\(6.5\textrm{Mpa}\sqrt{\textrm{m}}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>density of the rock (upper layer)</p></td>
+<td><p><span class="math notranslate nohighlight">\(2300\textrm{Kg/m}^{3}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>density of the rock (lower layer)</p></td>
+<td><p><span class="math notranslate nohighlight">\(2700\textrm{Kg/m}^{3}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>viscosity of magma</p></td>
+<td><p><span class="math notranslate nohighlight">\(30\textrm{Pa.s}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>density of magma</p></td>
+<td><p><span class="math notranslate nohighlight">\(2400\textrm{Kg/m}^{3}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p>injection rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(2000\textrm{m}^{3}/\textrm{s}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p>time of injection</p></td>
+<td><p><span class="math notranslate nohighlight">\(500\textrm{s}\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>We will set up the mesh and the material, fluid and injection properties in the same manner as we have done in the previous examples.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># local imports</span>
+<span class="kn">from</span> <span class="nn">mesh</span> <span class="kn">import</span> <span class="n">CartesianMesh</span>
+<span class="kn">from</span> <span class="nn">properties</span> <span class="kn">import</span> <span class="n">MaterialProperties</span><span class="p">,</span> <span class="n">FluidProperties</span><span class="p">,</span> <span class="n">InjectionProperties</span><span class="p">,</span> <span class="n">SimulationProperties</span>
+
+<span class="c1"># creating mesh</span>
+<span class="n">Mesh</span> <span class="o">=</span> <span class="n">CartesianMesh</span><span class="p">(</span><span class="mi">3200</span><span class="p">,</span> <span class="mi">2800</span><span class="p">,</span> <span class="mi">83</span><span class="p">,</span> <span class="mi">83</span><span class="p">)</span>
+
+<span class="c1"># solid properties</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.25</span>                           <span class="c1"># Poisson&#39;s ratio</span>
+<span class="n">youngs_mod</span> <span class="o">=</span> <span class="mf">1.125e9</span>                <span class="c1"># Young&#39;s modulus</span>
+<span class="n">Eprime</span> <span class="o">=</span> <span class="n">youngs_mod</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">nu</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="c1"># plane strain modulus</span>
+
+
+<span class="k">def</span> <span class="nf">sigmaO_func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This function provides the confining stress over the domain&quot;&quot;&quot;</span>
+    <span class="n">density_high</span> <span class="o">=</span> <span class="mi">2700</span>
+    <span class="n">density_low</span> <span class="o">=</span> <span class="mi">2300</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="mi">1500</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="mi">2800</span>
+    <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">layer</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">Ly</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">density_low</span> <span class="o">*</span> <span class="mf">9.8</span>
+    <span class="c1"># only dependant on the depth</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">Ly</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">density_high</span> <span class="o">*</span> <span class="mf">9.8</span> <span class="o">-</span> <span class="p">(</span><span class="n">Ly</span> <span class="o">-</span> <span class="n">layer</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">density_high</span> <span class="o">-</span> <span class="n">density_low</span><span class="p">)</span> <span class="o">*</span> <span class="mf">9.8</span>
+
+<span class="c1"># material properties</span>
+<span class="n">Solid</span> <span class="o">=</span> <span class="n">MaterialProperties</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+                           <span class="n">Eprime</span><span class="p">,</span>
+                           <span class="n">toughness</span><span class="o">=</span><span class="mf">6.5e6</span><span class="p">,</span>
+                           <span class="n">confining_stress_func</span><span class="o">=</span><span class="n">sigmaO_func</span><span class="p">,</span>
+                           <span class="n">minimum_width</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+
+<span class="c1"># injection parameters</span>
+<span class="n">Q0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mi">500</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">2000</span><span class="p">,</span>    <span class="mi">0</span><span class="p">]])</span>  <span class="c1"># injection rate</span>
+<span class="n">Injection</span> <span class="o">=</span> <span class="n">InjectionProperties</span><span class="p">(</span><span class="n">Q0</span><span class="p">,</span>
+                                <span class="n">Mesh</span><span class="p">,</span>
+                                <span class="n">source_coordinates</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1400</span><span class="p">])</span>
+
+<span class="c1"># fluid properties</span>
+<span class="n">Fluid</span> <span class="o">=</span> <span class="n">FluidProperties</span><span class="p">(</span><span class="n">viscosity</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="mi">2400</span><span class="p">)</span>
+
+<span class="c1"># simulation properties</span>
+<span class="n">simulProp</span> <span class="o">=</span> <span class="n">SimulationProperties</span><span class="p">()</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">finalTime</span> <span class="o">=</span> <span class="mi">560000</span>                <span class="c1"># the time at which the simulation stops</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">set_outputFolder</span><span class="p">(</span><span class="s2">&quot;./Data/neutral_buoyancy&quot;</span><span class="p">)</span> <span class="c1"># the disk address where the files are saved</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">gravity</span> <span class="o">=</span> <span class="kc">True</span>                    <span class="c1"># set up the gravity flag</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">tolFractFront</span> <span class="o">=</span> <span class="mf">3e-3</span>              <span class="c1"># increase the tolerance for fracture front iteration</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">plotTSJump</span> <span class="o">=</span> <span class="mi">4</span>                    <span class="c1"># plot every fourth time step</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">saveTSJump</span> <span class="o">=</span> <span class="mi">2</span>                    <span class="c1"># save every second time step</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">maxSolverItrs</span> <span class="o">=</span> <span class="mi">200</span>               <span class="c1"># increase the Picard iteration limit for the elastohydrodynamic solver</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">tmStpPrefactor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">80000</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]])</span> <span class="c1"># set up the time step prefactor</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">timeStepLimit</span> <span class="o">=</span> <span class="mi">5000</span>              <span class="c1"># time step limit</span>
+<span class="n">simulProp</span><span class="o">.</span><span class="n">plotVar</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;v&#39;</span><span class="p">]</span>              <span class="c1"># plot fracture width and fracture front velocity</span>
+</pre></div>
+</div>
+<p>Note that we have set the gravity flag to accommodate the effect of gravity. In addition, since the buoyancy driven fracture problem is more stiff, we have increase the maximum number of iterations for our solver to 200. To start the simulation, we will initialize a static radial fracture with a radius of <span class="math notranslate nohighlight">\(300\textrm{m}\)</span> and a net pressure of <span class="math notranslate nohighlight">\(0.5\textrm{MPa}\)</span>. After the start of injection, the fracture will bloat like a balloon due to injection and pressure will increase. As it increases, the stress intensity factor at the tip will also increase until it will get equal to the fracture toughness of the rock. The fracture will start propagating at this stage. We will run the simulation through the controller just like the previous examples.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fracture</span> <span class="kn">import</span> <span class="n">Fracture</span>
+<span class="kn">from</span> <span class="nn">controller</span> <span class="kn">import</span> <span class="n">Controller</span>
+<span class="kn">from</span> <span class="nn">fracture_initialization</span> <span class="kn">import</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">InitializationParameters</span>
+<span class="kn">from</span> <span class="nn">elasticity</span> <span class="kn">import</span> <span class="n">load_isotropic_elasticity_matrix</span>
+
+<span class="n">C</span> <span class="o">=</span> <span class="n">load_isotropic_elasticity_matrix</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span> <span class="n">Solid</span><span class="o">.</span><span class="n">Eprime</span><span class="p">)</span>
+<span class="n">Fr_geometry</span> <span class="o">=</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;radial&#39;</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+<span class="n">nit_param</span> <span class="o">=</span> <span class="n">InitializationParameters</span><span class="p">(</span><span class="n">Fr_geometry</span><span class="p">,</span>
+                                   <span class="n">regime</span><span class="o">=</span><span class="s1">&#39;static&#39;</span><span class="p">,</span>
+                                   <span class="n">net_pressure</span><span class="o">=</span><span class="mf">0.5e6</span><span class="p">,</span>
+                                   <span class="n">elasticity_matrix</span><span class="o">=</span><span class="n">C</span><span class="p">)</span>
+
+<span class="n">Fr</span> <span class="o">=</span> <span class="n">Fracture</span><span class="p">(</span><span class="n">Mesh</span><span class="p">,</span>
+              <span class="n">init_param</span><span class="p">,</span>
+              <span class="n">Solid</span><span class="p">,</span>
+              <span class="n">Fluid</span><span class="p">,</span>
+              <span class="n">Injection</span><span class="p">,</span>
+              <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># create a Controller</span>
+<span class="n">controller</span> <span class="o">=</span> <span class="n">Controller</span><span class="p">(</span><span class="n">Fr</span><span class="p">,</span>
+                        <span class="n">Solid</span><span class="p">,</span>
+                        <span class="n">Fluid</span><span class="p">,</span>
+                        <span class="n">Injection</span><span class="p">,</span>
+                        <span class="n">simulProp</span><span class="p">)</span>
+
+<span class="c1"># run the simulation</span>
+<span class="n">controller</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>After the simulation is finished, we can plot the footprint and width of the fracture to visualize the results.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">visualization</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="c1"># loading simulation results</span>
+<span class="n">time_srs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mi">50</span><span class="p">,</span> <span class="mi">350</span><span class="p">,</span> <span class="mi">700</span><span class="p">,</span> <span class="mi">1100</span><span class="p">,</span> <span class="mi">2500</span><span class="p">,</span> <span class="mi">12000</span><span class="p">,</span> <span class="mi">50000</span><span class="p">,</span> <span class="mi">560000</span><span class="p">])</span>
+<span class="n">Fr_list</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">load_fractures</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="s2">&quot;./Data/neutral_buoyancy&quot;</span><span class="p">,</span>
+                                     <span class="n">time_srs</span><span class="o">=</span><span class="n">time_srs</span><span class="p">)</span>
+<span class="n">time_srs</span> <span class="o">=</span> <span class="n">get_fracture_variable</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                                 <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">)</span>
+
+<span class="c1"># plot footprint</span>
+<span class="n">Fig_FP</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">Fig_FP</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;mesh&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span>
+                            <span class="n">mat_properties</span><span class="o">=</span><span class="n">Solid</span><span class="p">,</span>
+                            <span class="n">backGround_param</span><span class="o">=</span><span class="s1">&#39;confining stress&#39;</span><span class="p">,</span>
+                            <span class="p">)</span>
+<span class="n">plt_prop</span> <span class="o">=</span> <span class="n">PlotProperties</span><span class="p">(</span><span class="n">plot_FP_time</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">Fig_FP</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">,</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;footprint&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span>
+                            <span class="n">fig</span><span class="o">=</span><span class="n">Fig_FP</span><span class="p">,</span>
+                            <span class="n">plot_prop</span><span class="o">=</span><span class="n">plt_prop</span><span class="p">)</span>
+
+<span class="c1"># plot width in 3D</span>
+<span class="n">plot_prop_magma</span><span class="o">=</span><span class="n">PlotProperties</span><span class="p">(</span><span class="n">color_map</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">Fig_Fr</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">[</span><span class="mi">2</span><span class="p">:],</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;width&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3D&#39;</span><span class="p">,</span>
+                            <span class="n">plot_prop</span><span class="o">=</span><span class="n">plot_prop_magma</span>
+                            <span class="p">)</span>
+<span class="n">Fig_Fr</span> <span class="o">=</span> <span class="n">plot_fracture_list</span><span class="p">(</span><span class="n">Fr_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+                            <span class="n">variable</span><span class="o">=</span><span class="s1">&#39;footprint&#39;</span><span class="p">,</span>
+                            <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3D&#39;</span><span class="p">,</span>
+                            <span class="n">fig</span><span class="o">=</span><span class="n">Fig_Fr</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Examples</a><ul>
+<li><a class="reference internal" href="#penny-shaped-hydraulic-fracture-benchmark">Penny shaped hydraulic fracture benchmark</a></li>
+<li><a class="reference internal" href="#height-contained-hydraulic-fracture">Height contained hydraulic fracture</a></li>
+<li><a class="reference internal" href="#fracture-closure">Fracture closure</a></li>
+<li><a class="reference internal" href="#lateral-spreading-of-a-dyke-at-neutral-buoyancy">Lateral spreading of a dyke at neutral buoyancy</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="Visualization.html"
+                          title="previous chapter">Post-processing and Visualization</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="codeReference.html"
+                          title="next chapter">Code Reference Manual</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/Examples.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="codeReference.html" title="Code Reference Manual"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Visualization.html" title="Post-processing and Visualization"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PyFrac 1.1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Examples</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016-2020, ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, Switzerland, Geo-Energy Laboratory.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

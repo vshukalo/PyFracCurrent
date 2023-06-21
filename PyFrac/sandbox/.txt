@@ -1,0 +1,3 @@
+ 0.0   'all program time'
+0.3180619   'make C simple'
+101.93461470000001   'load elasticity matrix'

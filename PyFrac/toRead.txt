@@ -1,0 +1,16 @@
+Упрощенная матрица С составляется в файле controller.py сразу после составления полной С
+(почти в начале метода run)
+
+В методе Андерсона с помощью MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse
+составляется система с упрощенной С
+
+
+
+Чтобы запустить тест:
+*не забыть сохранить изменения вручную
+*в командой строке зайти в директорию с тестом через cd 
+*написать pytest test_sandbox2.py
+
+Профайлинг с помощью cProfiler:
+
+python profile_sandbox.py > 2.csv

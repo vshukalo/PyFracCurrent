@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32228.343
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PyFracMP1", "PyFracMP1.pyproj", "{01D71BBA-F1D6-49B6-BC53-EB3BB9B57076}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{01D71BBA-F1D6-49B6-BC53-EB3BB9B57076}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01D71BBA-F1D6-49B6-BC53-EB3BB9B57076}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C68F189C-A5AA-435B-9202-4182433CEAFF}
+	EndGlobalSection
+EndGlobal
