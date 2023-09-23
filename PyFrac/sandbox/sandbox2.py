@@ -122,20 +122,20 @@ n = nn
 m = n
 num_split_x = n
 num_split_y = m
-lx = 100
-ly = 100
+lx = 150
+ly = 150
 # problem parameters
 myCompressibility = 1e-9
 min_w = 1e-6
-time  = 100
+time  = 250
 Q0 = 0.053
 
 # for matrix view
 mf.cmapp = 'viridis' 
 
 # solving system parameters
-mf.reused = True
-mf.itersolve = True        
+mf.reused = False
+mf.itersolve = False
 mf.Ctemplate = '3x3point'     
 mf.tolerReuse = 0.05  # tolerance for reusing
 mf.toler = 1e-5*Q0 # tolerance for bisgstab iterations
@@ -147,11 +147,15 @@ mf.toler = 1e-5*Q0 # tolerance for bisgstab iterations
 #                                                                      .                .....                    ...
 
 # define derectory and name for output file
-if(mf.reused):
-    mf.directory = 'C:/Users/VShukalo/myFolder/work/current_num_results/time ' + repr(time) + ' reused tolnorm ' + repr(mf.tolerReuse) +' '
-else: 
-    mf.directory = 'C:/Users/VShukalo/myFolder/work/current_num_results/time ' + repr(time)
-mf.T.changeName(repr(lx) + ' '+ repr(ly) +  ' n ' + repr(n) + ' m ' + repr(m) + 'time' + repr (time) + repr(mf.Ctemplate) )
+if ((mf.reused) and (mf.itersolve)):
+    mf.directory = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/' + 'n= '  + repr(n) +' Iter_Reuse ' + ' reu_tolnorm ' + repr(mf.tolerReuse) +' ' + repr(mf.Ctemplate) + ' '
+if (( not mf.reused) and (mf.itersolve)):
+    mf.directory = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/'  + 'n= '  + repr(n) + ' Iter ' + repr(mf.Ctemplate) + ' '
+if (( not mf.reused) and (not mf.itersolve)):    
+    mf.directory = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/' + 'n= '  + repr(n) + ' standart ' 
+
+
+mf.T.changeName('lx ' + repr(lx) + ' ly '+ repr(ly) + ' time ' + repr (time)  )
         
 # run the calculation
 mf.T.tic("all program time")

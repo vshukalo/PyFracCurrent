@@ -104,7 +104,7 @@ class Timers:
         self.timers = dict(sorted_tuple)
         for key, value in self.timers.items():
             with open ( directory + self.name + '.txt', 'a') as f:
-                f.write( repr(value * 1e-9) + "   " +  repr(key) + '\n')
+                f.write( repr(value * 1e-9 / (self.timers['all program time']*1e-9+0.01)*100 ) + '%  ' + repr(value * 1e-9) + "     " +  repr(key) + ' ' + '\n')
 
 
 T = Timers(" ")

@@ -12,8 +12,8 @@ import numpy as np
 import logging
 import warnings
 from scipy.optimize import fsolve
-
-
+ 
+import MyFunionsFile as mf
 def SolveFMM(levelSet, EltRibbon, EltChannel, mesh, farAwayPstv, farAwayNgtv):
     """
     solve Eikonal equation to get level set.
@@ -32,6 +32,8 @@ def SolveFMM(levelSet, EltRibbon, EltChannel, mesh, farAwayPstv, farAwayNgtv):
         Note:
             Does not return anything. The levelSet is updated in place.
     """
+    mf.T.tic('level set' )
+
     log = logging.getLogger('PyFrac.SolveFMM')
     # todo: This method is inefficient. It can be implemented with heap for better efficiency
 
@@ -163,6 +165,8 @@ def SolveFMM(levelSet, EltRibbon, EltChannel, mesh, farAwayPstv, farAwayNgtv):
                        levelSet[neighbors[3]], 1, mesh.hx, mesh.hy)  # arguments for the eikonal equation function
             guess = np.max(levelSet[neighbors])  # initial starting guess for the numerical solver
             levelSet[farAwayNgtv[unevaluated[i]]] = fsolve(Eikonal_Res, guess, args=Eikargs)  # numerical solver
+
+    mf.T.toc('level set' )      
 # from visualization import plot_fracture_variable_as_image
 # import matplotlib.pyplot as plt
 # fig = plt.figure()

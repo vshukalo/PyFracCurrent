@@ -2460,15 +2460,15 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
         
         if(mf.itersolve == True):
 
-            """ if (sim_prop.solveSparse == True ):
+            if (sim_prop.solveSparse == True ):
                 ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[0, ::], interItr, *args)
             else: 
-                ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[0, ::], interItr, *args)  """
+                ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[0, ::], interItr, *args) 
 
             mf.T.tic('whole atc for BiCGStab' )
 
             mf.T.tic('A_inv Simple = spilu(A_sp)' )
-            A_inv = spilu (A)
+            A_inv = spilu (ASimple)
             mf.T.toc('A_inv Simple = spilu(A_sp)' )
 
             mf.T.tic('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
@@ -2486,7 +2486,7 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
         else:
           
             mf.T.tic('np.linalg.solve(A, b)' )
-            Gks[0, ::] = np.linalg.solve(A, b)
+            Gks[0, ::] = np.linalg.solve(A, b) 
             mf.T.toc('np.linalg.solve(A, b)' )
        
 
@@ -2544,10 +2544,10 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
 
                         mf.T.tic('A_inv Simple = spilu(A_sp)' )        
                         A_inv = spilu (ASimple)
-                        mf.A_inv_saved = A_inv
                         mf.T.toc('A_inv Simple = spilu(A_sp)' )
+                        mf.A_inv_saved = A_inv
                 else:
-                    """ if k >= m_Anderson: 
+                    if k >= m_Anderson: 
                         if(sim_prop.solveSparse == True ):
                             ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[mk + 2, ::], interItr, *args)
                         else: 
@@ -2556,9 +2556,9 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
                         if(sim_prop.solveSparse == True ):
                             ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[mk + 1, ::], interItr, *args)
                         else: 
-                            ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[mk + 1, ::], interItr, *args) """
+                            ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[mk + 1, ::], interItr, *args)
                     mf.T.tic('A_inv Simple = spilu(A_sp)' )
-                    A_inv = spilu (A)
+                    A_inv = spilu (ASimple)
                     mf.T.toc('A_inv Simple = spilu(A_sp)' ) 
 
                 mf.T.tic('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
@@ -2566,7 +2566,7 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
                 mf.T.toc('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
 
                 mf.T.tic(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
-                Gks[mk + 1, ::], exit_code = bicgstab(A, b, callback = countBigstabIter, M = M, tol = mf.toler )
+                Gks[mk + 1, ::], exit_code = bicgstab( A , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
                 mf.T.toc(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
 
 
