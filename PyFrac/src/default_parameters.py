@@ -24,7 +24,7 @@ max_proj_Itrs = 10                      # maximum projection iterations.
 tmStp_prefactor = 0.8                   # time step prefactor(pf) to determine the time step(dt = pf*min(dx, dy)/max(v).
 req_sol_at = None                       # times at which the solution is required.
 final_time = None                       # time to stop the propagation.
-maximum_steps = 2000                    # maximum time steps.
+maximum_steps = 20000                    # maximum time steps.
 timeStep_limit = None                   # limit for the time step.
 fixed_time_step = None                  # constant time step.
 

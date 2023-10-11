@@ -156,8 +156,10 @@ def attempt_time_step(Frac, C, mat_properties, fluid_properties, sim_properties,
 
     previous_norm = 100 # initially set with a big value
 
+    mf.FrontIterEachStep = 0
     # Fracture front loop to find the correct front location
     while norm > sim_properties.tolFractFront:
+        mf.FrontIterEachStep += 1
         k = k + 1
         log.debug(' ')
         log.debug('Iteration ' + repr(k))
@@ -207,7 +209,10 @@ def attempt_time_step(Frac, C, mat_properties, fluid_properties, sim_properties,
         if k == sim_properties.maxFrontItrs:
             exitstatus = 6
             return exitstatus, None
-
+    mf.NumbFrontIter += 1
+    with open( mf.folder + 'FrontIt'+ repr(mf.T.name) +'.txt', 'a') as f:
+        f.write(repr(mf.FrontIterEachStep) +'\n')
+        
     # check if we advanced more than two cells
     if exitstatus == 1:
         if you_advance_more_than_2_cells(Fr_k.fully_traversed, Frac.EltTip, Frac.mesh.NeiElements, Frac.Ffront, Fr_k.Ffront, Fr_k.mesh) and \
@@ -462,6 +467,7 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
 
     # toughness iteration loop
     while itr < sim_properties.maxProjItrs:
+        mf.ToughnessIterNumb = mf.ToughnessIterNumb + 1
 
         if sim_properties.paramFromTip or mat_properties.anisotropic_K1c or mat_properties.TI_elasticity:
             if sim_properties.projMethod == 'ILSA_orig':
@@ -839,6 +845,7 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
                                   Eprime=Eprime_tip,
                                   Cprime=Cprime_tip,
                                   stagnant=stagnant) / Fr_lstTmStp.mesh.EltArea
+
 
     # check if the tip volume has gone into negative
     smallNgtvWTip = np.where(np.logical_and(wTip < 0, wTip > -1e-4 * np.mean(wTip)))
@@ -1338,6 +1345,7 @@ def solve_width_pressure(Fr_lstTmStp, sim_properties, fluid_properties, mat_prop
         # the constraint imposed and is resolved.
 
         while active_contraint:
+            mf.ConsrtaintIterNumb += 1
 
             perfNode_widthConstrItr = instrument_start('width constraint iteration', perfNode_nonLinSys)
 
@@ -1475,6 +1483,7 @@ def solve_width_pressure(Fr_lstTmStp, sim_properties, fluid_properties, mat_prop
                                              sim_properties,
                                              *arg,
                                              perf_node=perfNode_widthConstrItr)
+                    mf.NumAndersonCalls = mf.NumAndersonCalls + 1
                     mf.T.toc('Anderson' )
                     
 
@@ -2153,7 +2162,7 @@ def time_step_explicit_front(Fr_lstTmStp, C, timeStep, Qin, mat_properties, flui
     itr = 0
     # toughness iteration loop
     while itr < sim_properties.maxProjItrs:
-
+        mf.ToughnessIterNumb = mf.ToughnessIterNumb + 1
         if sim_properties.paramFromTip or mat_properties.anisotropic_K1c or mat_properties.TI_elasticity:
             if sim_properties.projMethod == 'ILSA_orig':
                 projection_method = projection_from_ribbon

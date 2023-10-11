@@ -2459,17 +2459,24 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
         (A, b, interItr, indices) = sys_fun(xks[0, ::], interItr, *args)     # assembling A and b
         
         if(mf.itersolve == True):
-
+            mf.T.tic('whole atc for BiCGStab' )
             if (sim_prop.solveSparse == True ):
                 ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[0, ::], interItr, *args)
             else: 
                 ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[0, ::], interItr, *args) 
 
-            mf.T.tic('whole atc for BiCGStab' )
-
+    
+            #if(np.linalg.det(ASimple) == 0):
             mf.T.tic('A_inv Simple = spilu(A_sp)' )
             A_inv = spilu (ASimple)
             mf.T.toc('A_inv Simple = spilu(A_sp)' )
+            """ else:
+                mf.T.tic('A_inv Simple = spilu(A_sp)' )
+
+                A_inv = spilu (A)
+                mf.T.toc('A_inv Simple = spilu(A_sp)' )
+            """
+
 
             mf.T.tic('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
             M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)
@@ -2505,8 +2512,9 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
 
 
     A_inv_reused = False
-
+    mf.AndersonIterEachStep = 0
     while not converged:
+        mf.AndersonIterEachStep += 1
         mf.AndersonIter = mf.AndersonIter + 1
         try:
             mk = np.min([k, m_Anderson-1])  # Asses the amount of solutions available for the least square problem
@@ -2636,6 +2644,8 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
                 perfNode_linSolve.status = 'failed'
             return solk, None
 
+    with open( mf.folder +' AndIt'+ repr(mf.T.name) +'.txt', 'a') as f:
+        f.write(repr(mf.AndersonIterEachStep) +'\n')
 
     data = [interItr[0], interItr[2], interItr[3]]
     return xks[mk + 2, ::], data

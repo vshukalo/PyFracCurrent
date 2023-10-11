@@ -32,8 +32,12 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
         """ The function providing the confining stress"""
         if abs(y) > 25:
             return 2e+7
+        elif (y > -2.5) and (y<2.5):
+            return 0.95*2e+7
         else:
-            return 3e+6  
+            return 3e+6
+    
+          
 
     cl = 0 # Carters leak of coefficient [m s^(-1/2)] 
     Solid = MaterialProperties(Mesh,
@@ -61,7 +65,9 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
     simulProp.saveToDisk = False
     simulProp.plotFigure = False
     simulProp.collectPerfData
-    #simulProp.set_tipAsymptote('Mt')                     # tip asymptote is evaluated with the viscosity dominated assumption
+
+    #simulProp.set_tipAsymptote('M')                     # tip asymptote is evaluated with the viscosity dominated assumption
+
     #simulProp.frontAdvancing = 'explicit'               # to set explicit front tracking
     simulProp.solveSparse = False
     simulProp.log2file = False
@@ -84,8 +90,10 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
     #simulProp.meshExtensionAllDir = True
     #simulProp.set_mesh_extension_direction(['horizontal'])
 
-    simulProp.maxSolverItrs = 200                                   # increase the Anderson iteration limit for the
+    simulProp.maxSolverItrs = 2000                                   # increase the Anderson iteration limit for the
                                                                     # elastohydrodynamic solver
+    simulProp.maxFrontItrs = 2000
+
 
     #simulProp.relaxation_factor = 0.5                       # relax Anderson iteration
 
@@ -117,17 +125,17 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
 import MyFunionsFile as mf # file with Timer and global varibles
 
 # net parameters
-nn = 50
+nn = 100
 n = nn
 m = n
 num_split_x = n
 num_split_y = m
-lx = 150
-ly = 150
+lx = 250
+ly = 250
 # problem parameters
 myCompressibility = 1e-9
 min_w = 1e-6
-time  = 250
+time  = 100
 Q0 = 0.053
 
 # for matrix view
@@ -147,15 +155,17 @@ mf.toler = 1e-5*Q0 # tolerance for bisgstab iterations
 #                                                                      .                .....                    ...
 
 # define derectory and name for output file
+mf.folder ='C:/Users/VShukalo/myFolder/work/current_num_results/time/output_betta/'
+
 if ((mf.reused) and (mf.itersolve)):
-    mf.directory = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/' + 'n= '  + repr(n) +' Iter_Reuse ' + ' reu_tolnorm ' + repr(mf.tolerReuse) +' ' + repr(mf.Ctemplate) + ' '
+    mf.directory =  mf.folder+' Iter_Reuse ' + ' reu_tolnorm ' + repr(mf.tolerReuse) +' ' + repr(mf.Ctemplate) + ' '
 if (( not mf.reused) and (mf.itersolve)):
-    mf.directory = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/'  + 'n= '  + repr(n) + ' Iter ' + repr(mf.Ctemplate) + ' '
+    mf.directory = mf.folder   + ' Iter ' + repr(mf.Ctemplate) + ' '
 if (( not mf.reused) and (not mf.itersolve)):    
-    mf.directory = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/' + 'n= '  + repr(n) + ' standart ' 
+    mf.directory =  mf.folder   + ' standart ' 
 
 
-mf.T.changeName('lx ' + repr(lx) + ' ly '+ repr(ly) + ' time ' + repr (time)  )
+mf.T.changeName('n = ' + repr(n) + ' 3 tough 0' + ' lx ' + repr(lx) + ' ly '+ repr(ly) + ' time ' + repr (time)  )
         
 # run the calculation
 mf.T.tic("all program time")
@@ -168,7 +178,15 @@ mf.T.addInfo( 'w, l ' +  repr(w) + ' ' + repr(l) )
 if (mf.itersolve == False):
     mf.T.addInfo ( 'numLinalgCalls ' + repr(mf.numLinalgCalls))
 else:
-    mf.T.addInfo( 'numBCG ' +  repr(mf.NumbBigsCalls) )    
+    mf.T.addInfo( 'numBCG_Calls ' +  repr(mf.NumbBigsCalls) )    
+
+mf.T.addInfo( 'Anderson Iter numb ' +  repr(mf.AndersonIter) )
+mf.T.addInfo( 'Anderson calls numb ' +  repr(mf.NumAndersonCalls) )
+mf.T.addInfo( 'Toughness Iter numb ' +  repr(mf.ToughnessIterNumb) )
+mf.T.addInfo( 'Front Iter numb ' +  repr(mf.NumbFrontIter) )
+mf.T.addInfo( 'Constraint Iter numb ' +  repr(mf.ConsrtaintIterNumb) )
+
+
 
 # add to file averaged num of bicgstab iter, time of bicgstab call, time of Ainv
 sum = 0

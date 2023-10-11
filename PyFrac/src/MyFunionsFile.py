@@ -115,11 +115,33 @@ toler = 0
 global r
 r = 0 
 
+global folder
+folder = 'C:/Users/VShukalo/myFolder/work/current_num_results/'
+
 global Csimple
 Csimple = 0
 
 global AndersonIter
 AndersonIter = 0
+
+global AndersonIterEachStep
+AndersonIterEachStep = 0
+
+global FrontIterEachStep
+FrontIterEachStep = 0
+
+
+global NumAndersonCalls
+NumAndersonCalls = 0
+
+global ToughnessIterNumb
+ToughnessIterNumb = 0
+
+global NumbFrontIter
+NumbFrontIter = 0
+
+global ConsrtaintIterNumb
+ConsrtaintIterNumb = 0
 
 global directory
 directory = ' '

@@ -5,8 +5,8 @@ import cProfile, pstats
 profiler = cProfile.Profile()
 profiler.enable()                
 
-num_split_x = 100
-num_split_y = 100
+num_split_x = 200
+num_split_y = 200
 
 set_input_2 = ( 
                 num_split_x,     # num_split_x
