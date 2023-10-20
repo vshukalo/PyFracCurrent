@@ -115,6 +115,12 @@ toler = 0
 global r
 r = 0 
 
+global crackForm
+crackForm = 'pkn'
+
+global tolInAnders
+tolInAnders = 0.0001
+
 global folder
 folder = 'C:/Users/VShukalo/myFolder/work/current_num_results/'
 

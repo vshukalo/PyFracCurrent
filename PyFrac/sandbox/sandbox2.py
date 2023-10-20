@@ -28,16 +28,24 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
     Eprime = youngs_mod / (1 - nu ** 2) # plain strain modulus
     K_Ic = 0                            # fracture toughness of the material
 
-    def sigmaO_func(x, y):
-        """ The function providing the confining stress"""
-        if abs(y) > 25:
-            return 2e+7
-        elif (y > -2.5) and (y<2.5):
-            return 0.95*2e+7
-        else:
-            return 3e+6
+    if(mf.crackForm == 'pkn'):
+        def sigmaO_func(x, y):
+
+            if abs(y) > 25:
+                return 2e+7
+            else:
+                return 3e+6
+    if (mf.crackForm == 'sandglass'):
+        # sangglass
+        def sigmaO_func(x, y):
+            if abs(y) > 25:
+                return 2e+7
+            elif (y > 5) and (y<10):
+                return 0.95*2e+7
+            else:
+                return 3e+6
     
-          
+        
 
     cl = 0 # Carters leak of coefficient [m s^(-1/2)] 
     Solid = MaterialProperties(Mesh,
@@ -60,9 +68,10 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
     simulProp = SimulationProperties()
     simulProp.finalTime = time              # the time at which the simulation stops
     simulProp.bckColor = 'sigma0'           # setting the parameter according to which the mesh is color coded
-    simulProp.set_outputFolder("./Data/height_contained")
+    simulProp.set_outputFolder(mf.folder)
     simulProp.tmStpPrefactor = 1.0          # decreasing the size of time step
     simulProp.saveToDisk = False
+    simulProp.outputTimePeriod = 50                   # to save after every time step
     simulProp.plotFigure = False
     simulProp.collectPerfData
 
@@ -94,6 +103,7 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
                                                                     # elastohydrodynamic solver
     simulProp.maxFrontItrs = 2000
 
+    simulProp.toleranceEHL = mf.tolInAnders
 
     #simulProp.relaxation_factor = 0.5                       # relax Anderson iteration
 
@@ -125,8 +135,9 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
 import MyFunionsFile as mf # file with Timer and global varibles
 
 # net parameters
-nn = 100
+nn = 70
 n = nn
+m = nn = nn
 m = n
 num_split_x = n
 num_split_y = m
@@ -135,18 +146,21 @@ ly = 250
 # problem parameters
 myCompressibility = 1e-9
 min_w = 1e-6
-time  = 100
+time  = 300
 Q0 = 0.053
 
 # for matrix view
 mf.cmapp = 'viridis' 
 
 # solving system parameters
-mf.reused = False
-mf.itersolve = False
-mf.Ctemplate = '3x3point'     
+mf.reused = True
+mf.itersolve = True
+mf.Ctemplate = '5x5point'     
 mf.tolerReuse = 0.05  # tolerance for reusing
 mf.toler = 1e-5*Q0 # tolerance for bisgstab iterations
+mf.tolInAnders = 0.001
+
+mf.crackForm = 'sandglass'  # 'pkn'  'sandglass'
 
 #  simplified C templates:                                             .                .....                    ...
 #                                    .                ...             ...               .....                   .....          
@@ -155,7 +169,20 @@ mf.toler = 1e-5*Q0 # tolerance for bisgstab iterations
 #                                                                      .                .....                    ...
 
 # define derectory and name for output file
-mf.folder ='C:/Users/VShukalo/myFolder/work/current_num_results/time/output_betta/'
+folderName = 'n_' + repr(nn) +'_'+  mf.crackForm  +'_AndrTol_' + repr(mf.tolInAnders) + '_l_' + repr(lx) + '_time_' + repr(time) 
+import os
+path = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/d(dw)_d(dp)_drowing/'+ folderName
+        
+
+# Создаем директорию
+try:
+    os.makedirs(path)
+except FileExistsError:
+    print('Директория уже существует')
+
+mf.folder = path +'/'
+
+
 
 if ((mf.reused) and (mf.itersolve)):
     mf.directory =  mf.folder+' Iter_Reuse ' + ' reu_tolnorm ' + repr(mf.tolerReuse) +' ' + repr(mf.Ctemplate) + ' '
@@ -165,8 +192,9 @@ if (( not mf.reused) and (not mf.itersolve)):
     mf.directory =  mf.folder   + ' standart ' 
 
 
-mf.T.changeName('n = ' + repr(n) + ' 3 tough 0' + ' lx ' + repr(lx) + ' ly '+ repr(ly) + ' time ' + repr (time)  )
-        
+
+mf.T.changeName('n = ' + repr(n) + ' tough 0' + ' lx ' + repr(lx) + ' ly '+ repr(ly) + ' time ' + repr (time)  )
+
 # run the calculation
 mf.T.tic("all program time")
 w, l = sand(num_split_x, num_split_y, myCompressibility, min_w, time, Q0, lx,ly)    

@@ -903,6 +903,9 @@ class Controller:
                                                          self.C,
                                                          timeStep,
                                                          tmStp_perf)
+            # сохранение картинки трещины в конце расчета
+            """ if(self.fracture.time > self.sim_prop.finalTime-20):
+                plt.savefig ( mf.folder +'time' + repr(self.fracture.time) + '.png') """
 
             if self.sim_prop.collectPerfData:
                 tmStp_perf.CpuTime_end = time.time()

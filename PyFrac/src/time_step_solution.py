@@ -994,7 +994,7 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
     Fr_kplus1.TarrvlZrVrtx[Fr_kplus1.EltTip[new_tip]] = Fr_kplus1.time - Fr_kplus1.l[new_tip] / Fr_kplus1.v[new_tip]
     Fr_kplus1.wHist = np.maximum(Fr_kplus1.w, Fr_lstTmStp.wHist)
     Fr_kplus1.closed = data[1]
-    tip_neg_rib = np.asarray([], dtype=np.int)
+    tip_neg_rib = np.asarray([], dtype=int)
     # adding tip cells with closed corresponding ribbon cells to the list of closed cells
     for i, elem in enumerate(Fr_kplus1.EltTip):
         if corr_ribbon[i] in Fr_kplus1.closed and elem not in Fr_kplus1.closed:
@@ -1360,7 +1360,7 @@ def solve_width_pressure(Fr_lstTmStp, sim_properties, fluid_properties, mat_prop
             # The code below finds the indices(in the EltCrack list) of the neighbours of all the cells in the crack.
             # This is done to avoid costly slicing of the large numpy arrays while making the linear system during the
             # fixed point iterations. For neighbors that are outside the fracture, len(EltCrack) + 1 is returned.
-            corr_nei = np.full((len(EltCrack_k), 4), len(EltCrack_k), dtype=np.int)
+            corr_nei = np.full((len(EltCrack_k), 4), len(EltCrack_k), dtype=int)
             for i, elem in enumerate(EltCrack_k):
                 corresponding = np.where(EltCrack_k == Fr_lstTmStp.mesh.NeiElements[elem, 0])[0]
                 if len(corresponding) > 0:
@@ -1476,15 +1476,23 @@ def solve_width_pressure(Fr_lstTmStp, sim_properties, fluid_properties, mat_prop
                                            *arg,
                                            perf_node=perfNode_widthConstrItr)
                 else:
+                    w = np.copy(Fr_lstTmStp.w)
+                    p = np.copy(Fr_lstTmStp.pFluid)
                     mf.T.tic('Anderson' )
                     sol, data_nonLinSolve = Anderson(sys_fun,
                                              guess,
                                              inter_itr_init,
                                              sim_properties,
+                                             w[to_solve_k], 
+                                             p[to_impose_k],
                                              *arg,
                                              perf_node=perfNode_widthConstrItr)
                     mf.NumAndersonCalls = mf.NumAndersonCalls + 1
                     mf.T.toc('Anderson' )
+
+
+
+                    
                     
 
             elif sim_properties.elastohydrSolver == 'RKL2':
@@ -1615,6 +1623,8 @@ def solve_width_pressure(Fr_lstTmStp, sim_properties, fluid_properties, mat_prop
             return_data = [data_nonLinSolve, neg_km1, fully_closed, dp_il, Q]
         else:
             return_data = [data_nonLinSolve, neg_km1, fully_closed]
+
+        
 
         return w, pf_k, return_data
 

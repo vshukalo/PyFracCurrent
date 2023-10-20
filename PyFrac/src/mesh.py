@@ -215,7 +215,7 @@ class CartesianMesh:
         booleconnEdgesNodes = np.zeros([numberofedges, 1], dtype=int)  # Peruzzo 2019
         connEdgesNodes = np.empty([numberofedges, 2], dtype=int)  # Peruzzo 2019
         connElemEdges = np.empty([self.NumberOfElts, 4], dtype=int)  # Peruzzo 2019
-        connEdgesElem = np.full([numberofedges, 2], np.nan, dtype=np.int)  # Peruzzo 2019
+        connEdgesElem = np.full([numberofedges, 2], np.nan, dtype=int)  # Peruzzo 2019
         connNodesEdges = np.full([self.NumberofNodes, 4], np.nan, dtype=int)  # Peruzzo 2019
         connNodesElem = np.full([self.NumberofNodes, 4], np.nan, dtype=int)  # Peruzzo 2019
         k = 0
@@ -889,7 +889,7 @@ class CartesianMesh:
         # add rectangle for each cell
         patch_list = []
         for i in elements:
-            polygon = mpatches.Polygon(np.reshape(self.VertexCoor[self.Connectivity[i], :], (4, 2)), True)
+            polygon = mpatches.Polygon(np.reshape(self.VertexCoor[self.Connectivity[i], :], (4, 2)), closed = True)
             patch_list.append(polygon)
 
         p = PatchCollection(patch_list,

@@ -2392,7 +2392,6 @@ def calculate_fluid_flow_characteristics_laminar(w, pf, sigma0, Mesh, EltCrack, 
 #-----------------------------------------------------------------------------------------------------------------------
 import MyFunionsFile as mf
 from scipy.sparse.linalg import bicgstab
-import matplotlib.pyplot as plt
 from scipy.sparse.linalg import spilu
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import LinearOperator
@@ -2413,7 +2412,7 @@ def countBigstabIter(xk):
         mf.BigstabIterNumb[mf.NumbBigsCalls] = 0
     mf.BigstabIterNumb[mf.NumbBigsCalls]= mf.BigstabIterNumb[mf.NumbBigsCalls] + 1
 
-def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
+def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None):
     """
     Anderson solver for non linear system.
 
@@ -2445,7 +2444,8 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
     xks = np.full((m_Anderson+2, guess.size), 0.)
     Fks = np.full((m_Anderson+1, guess.size), 0.)
     Gks = np.full((m_Anderson+1, guess.size), 0.)
-
+    Gks_ = np.full((m_Anderson+1, guess.size), 0.)
+    ReshFull = []
     ## Initialization of iteration parameters
     k = 0
     normlist = []
@@ -2455,7 +2455,7 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
         perfNode_linSolve = instrument_start("linear system solve", perf_node)
         # First iteration
         xks[0, ::] = np.array([guess])                                       # xo
-        
+        ReshFull.append(xks[0, ::])
         (A, b, interItr, indices) = sys_fun(xks[0, ::], interItr, *args)     # assembling A and b
         
         if(mf.itersolve == True):
@@ -2464,7 +2464,6 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
                 ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[0, ::], interItr, *args)
             else: 
                 ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[0, ::], interItr, *args) 
-
     
             #if(np.linalg.det(ASimple) == 0):
             mf.T.tic('A_inv Simple = spilu(A_sp)' )
@@ -2477,7 +2476,6 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
                 mf.T.toc('A_inv Simple = spilu(A_sp)' )
             """
 
-
             mf.T.tic('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
             M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)
             mf.T.toc('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
@@ -2488,6 +2486,10 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
 
             mf.T.toc('whole atc for BiCGStab' )
             mf.NumbBigsCalls = mf.NumbBigsCalls + 1
+            # холостой пробег для измерения
+            """ mf.T.tic(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' )
+            Gks_[0, ::], exit_code = bicgstab( ASimple , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
+            mf.T.toc(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' ) """
 
             mf.infoinEachIt.append(exit_code)
         else:
@@ -2501,6 +2503,8 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
 
         Fks[0, ::] = Gks[0, ::] - xks[0, ::]
         xks[1, ::] = Gks[0, ::]                                               # x1
+        ReshFull.append(xks[1, ::])
+
     except np.linalg.linalg.LinAlgError:
         log.error('singular matrix!')
         solk = np.full((len(xks[0]),), np.nan, dtype=np.float64)
@@ -2577,14 +2581,29 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
                 Gks[mk + 1, ::], exit_code = bicgstab( A , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
                 mf.T.toc(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
 
+                
 
                 mf.T.toc('whole atc for BiCGStab' )
                 mf.NumbBigsCalls = mf.NumbBigsCalls + 1 
                 mf.infoinEachIt.append(exit_code)
+
+                # холостой пробег для измерения
+                """ mf.T.tic(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' )
+                Gks_[mk + 1, ::], exit_code = bicgstab( ASimple , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
+                mf.T.toc(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' ) """
             else:
+                """ if(sim_prop.solveSparse == True ):
+                    ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[mk + 2, ::], interItr, *args)
+                else: 
+                    ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[mk + 2, ::], interItr, *args)       """
+                
                 mf.T.tic('np.linalg.solve(A, b)' )
                 Gks[mk + 1, ::] = np.linalg.solve(A, b)
-            
+
+                """ Gks_[mk + 1, ::] = np.linalg.solve(ASimple, b)
+                with open( mf.folder +' diff sol' + mf.Ctemplate + '.txt', 'a') as f:
+                    f.write(repr(Gks[mk + 1, ::] - Gks_[mk + 1, ::]) +'\n') """
+                
                 mf.T.toc('np.linalg.solve(A, b)' ) 
         
                 """ plt.plot(xwave)
@@ -2614,6 +2633,8 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
             xks[mk + 2, ::] = (1-relax) * np.sum(np.transpose(np.multiply(np.transpose(xks[:mk+2,::]), omega_s)),axis=0)\
                  + relax * np.sum(np.transpose(np.multiply(np.transpose(Gks[:mk+2,::]), omega_s)),axis=0)
 
+            ReshFull.append(xks[mk + 2, ::])
+
         except np.linalg.linalg.LinAlgError:
             log.error('singular matrix!')
             solk = np.full((len(xks[mk]),), np.nan, dtype=np.float64)
@@ -2629,6 +2650,7 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
         normlist.append(norm)
         k = k + 1
 
+        
         A_inv_reused = (norm < mf.tolerReuse)
 
         if perf_node is not None:
@@ -2644,9 +2666,160 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop, *args, perf_node=None):
                 perfNode_linSolve.status = 'failed'
             return solk, None
 
-    with open( mf.folder +' AndIt'+ repr(mf.T.name) +'.txt', 'a') as f:
-        f.write(repr(mf.AndersonIterEachStep) +'\n')
+    with open( mf.folder +'numbAndIter' + repr(mf.T.name) +'.txt', 'a') as f:
+        f.write( repr(mf.NumAndersonCalls) + ':  ' + repr(mf.AndersonIterEachStep) +'\n')
 
     data = [interItr[0], interItr[2], interItr[3]]
+
+    """ with open( mf.folder +'p_'+ repr(mf.T.name) +'.txt', 'a') as f:
+        f.write(repr(xks[::, len(to_solve):]) +'\n')
+    with open( mf.folder +'w_'+ repr(mf.T.name) +'.txt', 'a') as f:
+        f.write(repr(xks[::, :len(to_solve)]) +'\n') """
+        
+    # drow solution    
+    ReshFull = np.array(ReshFull)
+    drow_ddsol(ReshFull, args)
+
+    drow_sol(w, p, ReshFull, args)
+
+    Norms = np.array(normlist)
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    ax1.plot(range(len(Norms)), np.log2(Norms))
+    plt.savefig ( mf.folder +'norm_numbAndCall' + repr(mf.NumAndersonCalls) + '.png')
+    plt.draw()
+    plt.close('all')
+    
+
     return xks[mk + 2, ::], data
 
+def drow_ddsol(xks, args):
+    (EltCrack, to_solve, to_impose, imposed_val, wc_to_impose, frac, fluid_prop, mat_prop,
+    sim_prop, dt, Q, C, InCrack, LeakOff, active, neiInCrack, lst_edgeInCrk) = args
+
+    dw = xks[::, :len(to_solve)]
+    dp = xks[::, len(to_solve):]
+
+    x_dw = frac.mesh.CenterCoor[to_solve, 0]
+    y_dw = frac.mesh.CenterCoor[to_solve, 1]
+
+    x_dp = frac.mesh.CenterCoor[to_impose, 0]
+    y_dp = frac.mesh.CenterCoor[to_impose, 1]
+    angles = [(30, 45), (60, 120), (45, 180)]  # список углов обзора
+
+    def plot_ddw(iteration):
+        vector = dw[iteration, ::]  # vector of sol on current iter : dw 
+        vector_next = dw[iteration+1, ::]  # vector of sol on next iter : dw 
+        x = x_dw
+        y = y_dw
+        z = vector_next - vector
+    
+        for i, angle in enumerate(angles):
+            fig = plt.figure()
+            ax1 = fig.add_subplot(111, projection='3d')  
+            ax1.plot_trisurf(x, y, z, cmap='winter')
+            ax1.set_xlabel('X')
+            ax1.set_ylabel('Y')
+            ax1.set_zlabel('ddW')
+            ax1.view_init(elev=angle[0], azim=angle[1])
+            ax1.set_title('ddW between Iterations {}'.format(iteration, i+1))
+            ax1.grid(True)
+
+            plt.savefig(mf.folder + 'ddW_numbAndCall' + repr(mf.NumAndersonCalls) +
+                   '_' + repr(iteration) + '_' + repr(iteration + 1) + '_angle' + repr(i) + '.png')
+            plt.draw()
+            plt.close('all')  
+
+
+    def plot_ddp(iteration):
+        vector = dp[iteration, ::]  # vector of sol on current iter : dp
+        vector_next = dp[iteration+1, ::]  # vector of sol on next iter : dp 
+        x = x_dp
+        y = y_dp
+        z = vector_next - vector
+        
+        for i, angle in enumerate(angles):
+            fig = plt.figure()
+            ax1 = fig.add_subplot(111, projection='3d')  
+            ax1.plot_trisurf(x, y, z, cmap='winter')
+            ax1.set_xlabel('X')
+            ax1.set_ylabel('Y')
+            ax1.set_zlabel('ddP')
+            ax1.view_init(elev=angle[0], azim=angle[1])
+            ax1.set_title('ddP between Iterations {}'.format(iteration, i+1))
+            ax1.grid(True)
+
+            plt.savefig(mf.folder + 'ddP_numbAndCall' + repr(mf.NumAndersonCalls) +
+                   '_' + repr(iteration) + '_' + repr(iteration + 1)  + '_angle' + repr(i) + '.png')
+            plt.draw()
+            plt.close('all')
+    
+    for i in range( len(dw[::, 1]) -2):
+        plot_ddw(i)      
+    for i in range( len(dp[::, 1]) -2):
+        plot_ddp(i)
+
+def drow_sol(w, p, xks, args):
+    (EltCrack, to_solve, to_impose, imposed_val, wc_to_impose, frac, fluid_prop, mat_prop,
+    sim_prop, dt, Q, C, InCrack, LeakOff, active, neiInCrack, lst_edgeInCrk) = args
+
+    dw = xks[::, :len(to_solve)]
+    dp = xks[::, len(to_solve) + len(active): len(to_solve) + len(active) + len(to_impose)]
+
+    x_dw = frac.mesh.CenterCoor[to_solve, 0]
+    y_dw = frac.mesh.CenterCoor[to_solve, 1]
+
+    x_dp = frac.mesh.CenterCoor[to_impose, 0]
+    y_dp = frac.mesh.CenterCoor[to_impose, 1]
+    angles = [(30, 45), (60, 120), (45, 180)]
+
+    def plot_w(iteration):
+        vector = w + dw[iteration, ::]  # vector of sol on current iter : dw 
+        x = x_dw
+        y = y_dw
+        z = vector
+
+        for i, angle in enumerate(angles):
+            fig = plt.figure()
+            ax1 = fig.add_subplot(111, projection='3d')  
+            ax1.plot_trisurf(x, y, z, cmap='winter')
+            ax1.set_xlabel('X')
+            ax1.set_ylabel('Y')
+            ax1.set_zlabel('W')
+            ax1.view_init(elev=angle[0], azim=angle[1])
+            ax1.set_title('W on Iteration {}'.format(iteration, i+1))
+            ax1.grid(True)
+    
+            plt.savefig(mf.folder + 'W_numbAndCall' + repr(mf.NumAndersonCalls) +
+                   '_' + repr(iteration) + '_' + repr(iteration + 1) + '_angle' + repr(i) + '.png')
+            plt.draw()
+            plt.close('all')  
+
+
+    def plot_p(iteration):
+        vector = p + dp[iteration, ::]  # vector of sol on current iter : dw 
+        x = x_dp
+        y = y_dp
+        z = vector
+    
+        for i, angle in enumerate(angles):
+            fig = plt.figure()
+            ax1 = fig.add_subplot(111, projection='3d')  
+            ax1.plot_trisurf(x, y, z, cmap='winter')
+            ax1.set_xlabel('X')
+            ax1.set_ylabel('Y')
+            ax1.set_zlabel('P')
+            ax1.view_init(elev=angle[0], azim=angle[1])
+            ax1.set_title('P on Iteration {}'.format(iteration, i+1))
+            ax1.grid(True)
+    
+            plt.savefig(mf.folder + 'P_numbAndCall' + repr(mf.NumAndersonCalls) +
+                   '_' + repr(iteration) + '_' + repr(iteration + 1) + '_angle' + repr(i) + '.png')
+            plt.draw()
+            plt.close('all')
+
+    for i in range( len(dw[::, 1]) -2):
+        plot_w(i)      
+    for i in range( len(dp[::, 1]) -2):
+        plot_p(i)
+    
