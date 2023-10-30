@@ -5,6 +5,15 @@ condNumA = []
 global k
 k = 0
 
+global drowsol
+drowsol = False
+
+global folder_start
+folder_start = ' '
+
+global time_step_numb
+time_step_numb = 0
+
 def initCondNumOutput(A, filename):
     global condNumA
     condNumA = []

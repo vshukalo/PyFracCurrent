@@ -14,6 +14,7 @@ from fracture import Fracture
 from controller import Controller
 from fracture_initialization import Geometry, InitializationParameters
 from utility import setup_logging_to_console
+import numpy as np
 
 def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
     # setting up the verbosity level of the log at console
@@ -35,22 +36,19 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
                 return 2e+7
             else:
                 return 3e+6
-            
     if (mf.crackForm == 'sandglass'):
         # sangglass
         def sigmaO_func(x, y):
-            if (y > 80) or (y < -50):
+            if abs(y) > 25:
                 return 2e+7
-            elif (y > 35) and (y<45):
-                return 0.1*2e+7
+            elif (y > 5) and (y<10):
+                return 0.95*2e+7
             else:
                 return 3e+6
-            
-            
     
         
 
-    cl = 0 # Carters leak of coefficient [m s^(-1/2)] 
+    cl = 1e-5 # Carters leak of coefficient [m s^(-1/2)] 
     Solid = MaterialProperties(Mesh,
                             Eprime,
                             K_Ic,
@@ -59,8 +57,14 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
                             minimum_width = min_w)
 
     # injection parameters
-    Q0 = Q  # injection rate
-    Injection = InjectionProperties(Q0, Mesh)
+    """ Q0 = Q  # injection rate
+    Injection = InjectionProperties(Q0, Mesh) """
+
+    # injection parameters
+    Q0 = np.asarray([[0.0,  0.053],
+                [100,    0]])  # injection rate
+    Injection = InjectionProperties(Q0,
+                                Mesh)
 
     mf.Q = Q0
 
@@ -138,7 +142,7 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
 import MyFunionsFile as mf # file with Timer and global varibles
 
 # net parameters
-nn = 70
+nn = 150
 n = nn
 m = nn = nn
 m = n
@@ -149,7 +153,7 @@ ly = 250
 # problem parameters
 myCompressibility = 1e-9
 min_w = 1e-6
-time  = 400
+time  = 700
 Q0 = 0.053
 
 # for matrix view
@@ -160,12 +164,10 @@ mf.reused = True
 mf.itersolve = True
 mf.Ctemplate = '5x5point'     
 mf.tolerReuse = 0.05  # tolerance for reusing
-mf.toler = 1e-5*Q0 # tolerance for bisgstab iterations
+mf.toler = 1e-5 # tolerance for bisgstab iterations
 mf.tolInAnders = 0.001
 
 mf.crackForm = 'sandglass'  # 'pkn'  'sandglass'
-
-mf.drowsol = False
 
 #  simplified C templates:                                             .                .....                    ...
 #                                    .                ...             ...               .....                   .....          
@@ -174,9 +176,9 @@ mf.drowsol = False
 #                                                                      .                .....                    ...
 
 # define derectory and name for output file
-folderName = 'new_n_' + repr(nn) +'_'+  mf.crackForm  +'_AndrTol_' + repr(mf.tolInAnders) + '_l_' + repr(lx) + '_time_' + repr(time) 
+folderName = 'n_' + repr(nn) +'_'+  mf.crackForm  +'_AndrTol_' + repr(mf.tolInAnders) + '_l_' + repr(lx) + '_time_' + repr(time) 
 import os
-path = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/v2_dw_dp_drowing/'+ folderName
+path = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/sunset/'+ folderName
         
 
 # Создаем директорию
@@ -186,7 +188,7 @@ except FileExistsError:
     print('Директория уже существует')
 
 mf.folder = path +'/'
-# эта папка нужна чтобы файлы с колич итерации отображались в корневой папке
+
 mf.folder_start = mf.folder
 
 if ((mf.reused) and (mf.itersolve)):
@@ -225,7 +227,10 @@ mf.T.addInfo( 'Constraint Iter numb ' +  repr(mf.ConsrtaintIterNumb) )
 sum = 0
 if (mf.itersolve == True):
     #with open ( mf.directory + 'bicg num iter ' + mf.T.name + '.txt', 'a') as f:
-    for i in range(0, mf.NumbBigsCalls):
+    #print(mf.BigstabIterNumb)
+    """ -4 потому что когда толщина трещины нулевая это совпадает с начальным приближением 
+     из за этого  mf.NumbBigsCalls больше чем размер mf.BigstabIterNumb """
+    for i in range(0, len(mf.BigstabIterNumb)-4):
             #f.write( 'number of Bigstab iter: '  + repr(mf.BigstabIterNumb[i]) + '\n' )
         sum = sum + mf.BigstabIterNumb[i]
         #f.write('average num of bicgstab iter ' + repr(sum/mf.NumbBigsCalls) + '\n')

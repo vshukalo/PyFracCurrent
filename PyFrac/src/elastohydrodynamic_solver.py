@@ -2406,6 +2406,7 @@ def getPrecond (A):
     return(A_prec)
 
 
+import os
 
 def countBigstabIter(xk):
     if mf.NumbBigsCalls not in mf.BigstabIterNumb:
@@ -2486,6 +2487,7 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
 
             mf.T.toc('whole atc for BiCGStab' )
             mf.NumbBigsCalls = mf.NumbBigsCalls + 1
+
             # холостой пробег для измерения
             """ mf.T.tic(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' )
             Gks_[0, ::], exit_code = bicgstab( ASimple , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
@@ -2581,8 +2583,7 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
                 Gks[mk + 1, ::], exit_code = bicgstab( A , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
                 mf.T.toc(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
 
-                
-
+            
                 mf.T.toc('whole atc for BiCGStab' )
                 mf.NumbBigsCalls = mf.NumbBigsCalls + 1 
                 mf.infoinEachIt.append(exit_code)
@@ -2666,8 +2667,8 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
                 perfNode_linSolve.status = 'failed'
             return solk, None
 
-    with open( mf.folder +'numbAndIter' + repr(mf.T.name) +'.txt', 'a') as f:
-        f.write( repr(mf.NumAndersonCalls) + ':  ' + repr(mf.AndersonIterEachStep) +'\n')
+    with open( mf.folder_start +'numbAndIter' +'.txt', 'a') as f:
+        f.write( 'time step: ' + repr(mf.time_step_numb) + ' num And Call ' + repr(mf.NumAndersonCalls) + ':  ' + repr(mf.AndersonIterEachStep) +'\n')
 
     data = [interItr[0], interItr[2], interItr[3]]
 
@@ -2676,19 +2677,33 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
     with open( mf.folder +'w_'+ repr(mf.T.name) +'.txt', 'a') as f:
         f.write(repr(xks[::, :len(to_solve)]) +'\n') """
         
-    # drow solution    
-    ReshFull = np.array(ReshFull)
-    drow_ddsol(ReshFull, args)
+    # drow solution 
+    if (mf.drowsol == True ):   
+        temp_fold = mf.folder
+        path = mf.folder +'numbAndCall_' + repr(mf.NumAndersonCalls)
+        # Создаем директорию
+        try:
+            os.makedirs(path)
+        except FileExistsError:
+            print('Директория уже существует')
 
-    drow_sol(w, p, ReshFull, args)
+        mf.folder = path +'/'
 
-    Norms = np.array(normlist)
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    ax1.plot(range(len(Norms)), np.log2(Norms))
-    plt.savefig ( mf.folder +'norm_numbAndCall' + repr(mf.NumAndersonCalls) + '.png')
-    plt.draw()
-    plt.close('all')
+
+        ReshFull = np.array(ReshFull)
+        drow_ddsol(ReshFull, args)
+
+        drow_sol(w, p, ReshFull, args)
+
+        Norms = np.array(normlist)
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111)
+        ax1.plot(range(len(Norms)), np.log2(Norms))
+        plt.savefig ( mf.folder + 'norm.png')
+        plt.draw()
+        plt.close('all')
+
+        mf.folder = temp_fold
     
 
     return xks[mk + 2, ::], data
@@ -2705,7 +2720,7 @@ def drow_ddsol(xks, args):
 
     x_dp = frac.mesh.CenterCoor[to_impose, 0]
     y_dp = frac.mesh.CenterCoor[to_impose, 1]
-    angles = [(30, 45), (60, 120), (45, 180)]  # список углов обзора
+    angles = [(30, 45)]#, (60, 120), (45, 180)]  # список углов обзора
 
     def plot_ddw(iteration):
         vector = dw[iteration, ::]  # vector of sol on current iter : dw 
@@ -2725,8 +2740,7 @@ def drow_ddsol(xks, args):
             ax1.set_title('ddW between Iterations {}'.format(iteration, i+1))
             ax1.grid(True)
 
-            plt.savefig(mf.folder + 'ddW_numbAndCall' + repr(mf.NumAndersonCalls) +
-                   '_' + repr(iteration) + '_' + repr(iteration + 1) + '_angle' + repr(i) + '.png')
+            plt.savefig(mf.folder + 'ddW_' + repr(iteration) + '_' + repr(iteration + 1)  + '.png')
             plt.draw()
             plt.close('all')  
 
@@ -2749,8 +2763,7 @@ def drow_ddsol(xks, args):
             ax1.set_title('ddP between Iterations {}'.format(iteration, i+1))
             ax1.grid(True)
 
-            plt.savefig(mf.folder + 'ddP_numbAndCall' + repr(mf.NumAndersonCalls) +
-                   '_' + repr(iteration) + '_' + repr(iteration + 1)  + '_angle' + repr(i) + '.png')
+            plt.savefig(mf.folder + 'ddP_' + repr(iteration) + '_' + repr(iteration + 1)  + '.png')
             plt.draw()
             plt.close('all')
     
@@ -2771,7 +2784,7 @@ def drow_sol(w, p, xks, args):
 
     x_dp = frac.mesh.CenterCoor[to_impose, 0]
     y_dp = frac.mesh.CenterCoor[to_impose, 1]
-    angles = [(30, 45), (60, 120), (45, 180)]
+    angles = [(30, 45)]#, (60, 120), (45, 180)]
 
     def plot_w(iteration):
         vector = w + dw[iteration, ::]  # vector of sol on current iter : dw 
@@ -2790,8 +2803,7 @@ def drow_sol(w, p, xks, args):
             ax1.set_title('W on Iteration {}'.format(iteration, i+1))
             ax1.grid(True)
     
-            plt.savefig(mf.folder + 'W_numbAndCall' + repr(mf.NumAndersonCalls) +
-                   '_' + repr(iteration) + '_' + repr(iteration + 1) + '_angle' + repr(i) + '.png')
+            plt.savefig(mf.folder + 'W_' + repr(iteration) + '_' + repr(iteration + 1) + '.png')
             plt.draw()
             plt.close('all')  
 
@@ -2813,8 +2825,7 @@ def drow_sol(w, p, xks, args):
             ax1.set_title('P on Iteration {}'.format(iteration, i+1))
             ax1.grid(True)
     
-            plt.savefig(mf.folder + 'P_numbAndCall' + repr(mf.NumAndersonCalls) +
-                   '_' + repr(iteration) + '_' + repr(iteration + 1) + '_angle' + repr(i) + '.png')
+            plt.savefig(mf.folder + 'P_' + repr(iteration) + '_' + repr(iteration + 1) + '.png')
             plt.draw()
             plt.close('all')
 

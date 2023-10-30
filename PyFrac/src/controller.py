@@ -884,11 +884,23 @@ class Controller:
         # if not self.sim_prop.symmetric:
         #     if self.sim_prop.frontAdvancing == "predictor-corrector":
         #         self.sim_prop.frontAdvancing = "implicit"
-
+        import os
         log.info("Starting time = " + repr(self.fracture.time))
         # starting time stepping loop
         while self.fracture.time < 0.999 * self.sim_prop.finalTime and self.TmStpCount < self.sim_prop.maxTimeSteps:
+            mf.time_step_numb = self.TmStpCount
             
+            if (mf.drowsol == True):
+                mf.folder = mf.folder_start
+                path = mf.folder +'time_step_' + repr(self.TmStpCount)
+                # Создаем директорию
+                try:
+                    os.makedirs(path)
+                except FileExistsError:
+                    print('Директория уже существует')
+
+                mf.folder = path +'/'    
+
             mf.T.print()
 
             timeStep = self.get_time_step()
@@ -1557,6 +1569,7 @@ class Controller:
                 log.warning(self.errorMessages[status])
                 log.warning("Time step failed...")
 
+        mf.NumAndersonCalls = 0    
 
         return status, Fr
 

@@ -210,7 +210,7 @@ def attempt_time_step(Frac, C, mat_properties, fluid_properties, sim_properties,
             exitstatus = 6
             return exitstatus, None
     mf.NumbFrontIter += 1
-    with open( mf.folder + 'FrontIt'+ repr(mf.T.name) +'.txt', 'a') as f:
+    with open( mf.folder_start + 'FrontIt'+ repr(mf.T.name) +'.txt', 'a') as f:
         f.write(repr(mf.FrontIterEachStep) +'\n')
         
     # check if we advanced more than two cells
@@ -1489,6 +1489,9 @@ def solve_width_pressure(Fr_lstTmStp, sim_properties, fluid_properties, mat_prop
                                              perf_node=perfNode_widthConstrItr)
                     mf.NumAndersonCalls = mf.NumAndersonCalls + 1
                     mf.T.toc('Anderson' )
+
+                    
+
 
 
 
