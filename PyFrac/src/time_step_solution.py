@@ -178,10 +178,50 @@ def attempt_time_step(Frac, C, mat_properties, fluid_properties, sim_properties,
                                                           inj_properties,
                                                           perfNode_extFront)
 
+######## drow fracture front Frac.Ffront, Fr_k.Ffront
+        if (Fr_k is not None):
+            if (mf.recordFront == True ):
+                if (k == 1):
+                    with open( mf.frontCoordDirectory +'/priveous Front coords '  +'.txt', 'a') as f:
+                        #f.write(repr(Frac.Ffront[:, [0, 1]]))
+                        f.write('\n'.join([f"{a}\t{b}" for a, b in zip(Frac.Ffront[:, 0], Frac.Ffront[:, 1] )]))
+                
+                with open( mf.frontCoordDirectory +'/Front coords_Front_iter ' + repr(mf.FrontIterEachStep)  +'.txt', 'a') as f:
+                        #f.write(repr(Frac.Ffront[:, [0, 1]]))
+                        f.write('\n'.join([f"{a}\t{b}" for a, b in zip(Fr_k.Ffront[:, 0], Fr_k.Ffront[:, 1] )]))
+
+                #######   mesh.CenterCoor       fracture.CellStatus  
+
+                x = Fr_k.mesh.CenterCoor[:, 0]
+                y = Fr_k.mesh.CenterCoor[:, 1]
+                sgndDist = Fr_k.sgndDist
+                with open( mf.SignDistDirectory  +'/signDist Front_iter ' + repr(mf.FrontIterEachStep)  +'.txt', 'a') as f:
+                    f.write('\n'.join([f"{a}\t{b}\t{c}" for a, b, c in zip(x, y, sgndDist)]))
+
+                cellStat = Fr_k.CellStatus
+                with open( mf.cellStatusDirectory  +'/cellStatus Front_iter ' + repr(mf.FrontIterEachStep)  +'.txt', 'a') as f:
+                    f.write('\n'.join([f"{a}\t{b}\t{c}" for a, b, c in zip(x, y, cellStat)]))    
+
+
+######################  record sol on front iter
+        if (Fr_k is not None):
+            if (mf.recordsol == True ):
+
+                # Создаем директорию
+                """ try:
+                    os.makedirs(path)
+                except FileExistsError:
+                    print('Директория уже существует') """
+
+                record_sol(Fr_k)
+    
         if exitstatus == 1:
             # norm is evaluated by dividing the difference in the area of the tip cells between two successive
-            # iterations with the number of tip cells.
+            # iterations with the number of tip cells.            
             norm = abs((sum(Fr_k.FillF) - sum(fill_frac_last)) / len(Fr_k.FillF))
+            if (mf.recordsol == True ):
+                with open(  mf.path_for_front +'N' + '.txt', 'a') as f:
+                    f.write(repr(norm) + '\n')
         else:
             norm = np.nan
 
@@ -192,6 +232,10 @@ def attempt_time_step(Frac, C, mat_properties, fluid_properties, sim_properties,
             perfNode.extendedFront_data.append(perfNode_extFront)
 
         if exitstatus != 1:
+            with open( mf.folder_start + 'FrontIt'+ repr(mf.T.name) +'.txt', 'a') as f:
+                f.write( 'time step: ' + repr(mf.time_step_numb) + ' Front it numb ' + repr(mf.FrontIterEachStep) + ' ' +\
+                        TS_errorMessages[exitstatus] +'\n')
+
             return exitstatus, Fr_k
 
         log.debug('Norm of subsequent filling fraction estimates = ' + repr(norm))
@@ -202,22 +246,36 @@ def attempt_time_step(Frac, C, mat_properties, fluid_properties, sim_properties,
             if abs((previous_norm-norm)/norm) < 0.001:
                 log.debug( 'Norm of subsequent Norms of subsequent filling fraction estimates = ' + str(abs((previous_norm-norm)/norm)) + ' < 0.001')
                 exitstatus = 15
+                with open( mf.folder_start + 'FrontIt'+ repr(mf.T.name) +'.txt', 'a') as f:
+                    f.write( 'time step: ' + repr(mf.time_step_numb) + ' Front it numb ' + repr(mf.FrontIterEachStep) + ' ' +\
+                            TS_errorMessages[exitstatus] +'\n') 
                 return exitstatus, None
             else:
                 previous_norm = norm
 
         if k == sim_properties.maxFrontItrs:
             exitstatus = 6
+            with open( mf.folder_start + 'FrontIt'+ repr(mf.T.name) +'.txt', 'a') as f:
+                f.write( 'time step: ' + repr(mf.time_step_numb) + ' Front it numb ' + repr(mf.FrontIterEachStep) + ' ' +\
+                        TS_errorMessages[exitstatus] +'\n')
+            
             return exitstatus, None
-    mf.NumbFrontIter += 1
+        
     with open( mf.folder_start + 'FrontIt'+ repr(mf.T.name) +'.txt', 'a') as f:
-        f.write(repr(mf.FrontIterEachStep) +'\n')
+        f.write( 'time step: ' + repr(mf.time_step_numb) + ' Front it numb ' + repr(mf.FrontIterEachStep) + ' ' +\
+                TS_errorMessages[exitstatus] +'\n')  
+
+    mf.NumbFrontIter += 1
+    
         
     # check if we advanced more than two cells
     if exitstatus == 1:
         if you_advance_more_than_2_cells(Fr_k.fully_traversed, Frac.EltTip, Frac.mesh.NeiElements, Frac.Ffront, Fr_k.Ffront, Fr_k.mesh) and \
                 sim_properties.limitAdancementTo2cells:
             exitstatus = 17
+            with open( mf.folder_start + 'FrontIt'+ repr(mf.T.name) +'.txt', 'a') as f:
+                f.write( 'time step: ' + repr(mf.time_step_numb) + ' Front it numb ' + repr(mf.FrontIterEachStep) + ' ' +\
+                        TS_errorMessages[exitstatus] +'\n') 
             return exitstatus, Frac
 
     log.debug("Fracture front converged after " + repr(k) + " iterations with norm = " + repr(norm))
@@ -225,6 +283,20 @@ def attempt_time_step(Frac, C, mat_properties, fluid_properties, sim_properties,
     return exitstatus, Fr_k
 
 
+def record_sol(Fr):
+    w = Fr.w
+    p = Fr.pFluid
+
+    x = Fr.mesh.CenterCoor[:, 0]
+    y = Fr.mesh.CenterCoor[:, 1]
+
+    with open( mf.path_for_front + 'W_'  +'Front_iter ' + repr(mf.FrontIterEachStep)  +'.txt', 'a') as f:
+            f.write('\n'.join([f"{a}\t{b}\t{c}" for a, b, c in zip(x, y, w)]))
+
+    with open( mf.path_for_front + 'P_'  +'Front_iter ' + repr(mf.FrontIterEachStep)  +'.txt', 'a') as f:
+            f.write('\n'.join([f"{a}\t{b}\t{c}" for a, b, c in zip(x, y, p)]))
+
+    
 # ----------------------------------------------------------------------------------------------------------------------
 
 def injection_same_footprint(Fr_lstTmStp, C, timeStep, Qin, mat_properties, fluid_properties, sim_properties,
@@ -515,12 +587,12 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
         else:
             Eprime_k = None
 
-        # Initialization of the signed distance in the ribbon element - by inverting the tip asymptotics
+        
         sgndDist_k = 1e50 * np.ones((Fr_lstTmStp.mesh.NumberOfElts,), float)  # Initializing the cells with extremely
         # large float value. (algorithm requires inf)
 
         perfNode_tipInv = instrument_start('tip inversion', perfNode)
-
+        # Initialization of the signed distance in the ribbon element - by inverting the tip asymptotics
         sgndDist_k[Fr_lstTmStp.EltRibbon] = - TipAsymInversion(w_k,
                                                                Fr_lstTmStp,
                                                                mat_properties,
@@ -551,7 +623,8 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
         sgndDist_k[Fr_lstTmStp.EltRibbon] = np.minimum(sgndDist_k[Fr_lstTmStp.EltRibbon],
                                                        Fr_lstTmStp.sgndDist[Fr_lstTmStp.EltRibbon])
 
-        # region expected to have the front after propagation. The signed distance of the cells only in this region will
+
+        #/ region expected to have the front after propagation. The signed distance of the cells only in this region will
         # evaluated with the fast marching method to avoid unnecessary computation cost
         current_prefactor = sim_properties.get_time_step_prefactor(Fr_lstTmStp.time + timeStep)
         front_region = np.where(abs(Fr_lstTmStp.sgndDist) < current_prefactor * 12.66 * (
@@ -570,6 +643,8 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
                  Fr_lstTmStp.mesh,
                  front_region[pstv_region],
                  front_region[ngtv_region])
+        
+        sgndDist_k = mf.relax_alfa*sgndDist_k + (1-mf.relax_alfa)*Fr_lstTmStp.sgndDist
 
         # do it only once if not anisotropic
         if not (sim_properties.paramFromTip or mat_properties.anisotropic_K1c
@@ -632,6 +707,7 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
                 Fr_kplus1.EltTipBefore = Fr_lstTmStp.EltTip
                 Fr_kplus1.EltTip = EltsTipNew  # !!! EltsTipNew are the intersection between the fictitius cells and the frontlist as tip in order to decide the direction of remeshing
                 # (in case of anisotropic remeshing)
+                Fr_kplus1.CellStatus = CellStatus
                 exitstatus = 12 # You are here because the level set has negative values until the end of the mesh
                                 # or because a fictitius cell has intersected the mesh.frontlist
                 return exitstatus, Fr_kplus1
@@ -657,6 +733,7 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
                          Fr_lstTmStp.mesh,
                          front_region[pstv_region],
                          front_region[ngtv_region])
+                
         sgndDist_k = sgndDist_k_temp
 
         del correct_size_of_pstv_region
@@ -678,6 +755,7 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
     if len(np.intersect1d(Fr_lstTmStp.mesh.Frontlist, EltsTipNew)) > 0:
         Fr_lstTmStp.EltTipBefore = Fr_lstTmStp.EltTip
         Fr_lstTmStp.EltTip = EltsTipNew
+        Fr_lstTmStp.CellStatus = CellStatus
         exitstatus = 12
         return exitstatus, Fr_lstTmStp
 
@@ -965,6 +1043,7 @@ def injection_extended_footprint(w_k, Fr_lstTmStp, C, timeStep, Qin, mat_propert
     Fr_kplus1.EltRibbon = EltRibbon_k
     Fr_kplus1.ZeroVertex = zrVertx_k
     Fr_kplus1.sgndDist = sgndDist_k
+    Fr_kplus1.CellStatus = CellStatus_k
     Fr_kplus1.fully_traversed = fully_traversed_k
     Fr_kplus1.alpha = alpha_k[partlyFilledTip]
     Fr_kplus1.l = l_k[partlyFilledTip]
@@ -1343,9 +1422,10 @@ def solve_width_pressure(Fr_lstTmStp, sim_properties, fluid_properties, mat_prop
         
         # Making and solving the system of equations. The width constraint is checked. If active, system is remade with
         # the constraint imposed and is resolved.
-
+        mf.ConsrtaintIterNumbEachStep = 0
         while active_contraint:
             mf.ConsrtaintIterNumb += 1
+            mf.ConsrtaintIterNumbEachStep += 1
 
             perfNode_widthConstrItr = instrument_start('width constraint iteration', perfNode_nonLinSys)
 
@@ -1759,6 +1839,9 @@ def time_step_explicit_front(Fr_lstTmStp, C, timeStep, Qin, mat_properties, flui
              front_region[pstv_region],
              front_region[ngtv_region])
 
+##########      sgndDist relaxation    
+    sgndDist_k = mf.relax_alfa*sgndDist_k + (1-mf.relax_alfa)*Fr_lstTmStp.sgndDist
+
     # gets the new tip elements, along with the length and angle of the perpendiculars drawn on front (also containing
     # the elements which are fully filled after the front is moved outward)
     if sim_properties.projMethod == 'ILSA_orig':
@@ -2133,6 +2216,8 @@ def time_step_explicit_front(Fr_lstTmStp, C, timeStep, Qin, mat_properties, flui
     Fr_kplus1.EltChannel = EltChannel_k
     Fr_kplus1.EltTip = EltTip_k
     Fr_kplus1.EltCrack = EltCrack_k
+    Fr_kplus1.CellStatus = CellStatus_k
+    Fr_kplus1.sgndDist = sgndDist_k
     Fr_kplus1.EltRibbon = EltRibbon_k
     Fr_kplus1.ZeroVertex = zrVertx_k
     Fr_kplus1.alpha = alpha_k[partlyFilledTip]
@@ -2257,7 +2342,7 @@ def time_step_explicit_front(Fr_lstTmStp, C, timeStep, Qin, mat_properties, flui
         sgndDist_k[Fr_lstTmStp.EltRibbon] = np.minimum(sgndDist_k[Fr_lstTmStp.EltRibbon],
                                                        Fr_lstTmStp.sgndDist[Fr_lstTmStp.EltRibbon])
 
-        # region expected to have the front after propagation. The signed distance of the cells only in this region will
+        # / region expected to have the front after propagation. The signed distance of the cells only in this region will
         # evaluated with the fast marching method to avoid unnecessary computation cost
         current_prefactor = sim_properties.get_time_step_prefactor(Fr_lstTmStp.time + timeStep)
         front_region = np.where(abs(Fr_lstTmStp.sgndDist) < current_prefactor * 12.66 * (
@@ -2279,6 +2364,8 @@ def time_step_explicit_front(Fr_lstTmStp, C, timeStep, Qin, mat_properties, flui
                  Fr_lstTmStp.mesh,
                  front_region[pstv_region],
                  front_region[ngtv_region])
+
+        sgndDist_k = mf.relax_alfa*sgndDist_k + (1-mf.relax_alfa)*Fr_lstTmStp.sgndDist
 
         # do it only once if not anisotropic
         if not (sim_properties.paramFromTip or mat_properties.anisotropic_K1c

@@ -5,6 +5,15 @@ condNumA = []
 global k
 k = 0
 
+global NewtonIter
+NewtonIter = 0
+
+global relax_alfa
+relax_alfa = 1
+
+global SignDistDirectory
+SignDistDirectory = ' '
+
 global drowsol
 drowsol = False
 
@@ -13,6 +22,18 @@ folder_start = ' '
 
 global time_step_numb
 time_step_numb = 0
+
+global frontCoordDirectory
+frontCoordDirectory = ' '
+
+global cellStatusDirectory
+cellStatusDirectory = ' '
+
+global recordsol
+recordsol = 0
+
+global plot
+plot = False
 
 def initCondNumOutput(A, filename):
     global condNumA
@@ -104,9 +125,11 @@ class Timers:
              
              
     def print (self):
-       
         with open ( directory + self.name + '.txt', 'w') as f:
             f.write( 'info:' + '\n' + self.info + '\n')
+            f.write( 'And iter:' + '\n' + repr(AndersonIter) + '\n')
+            f.write( 'Newt iters:' + '\n' + repr(NewtonIter) + '\n') 
+     
         with open ( directory + self.name + '.txt', 'a') as f:
             f.write('times:' + '\n')
         sorted_tuple = sorted(self.timers.items(), key=lambda x: x[1])
@@ -118,8 +141,17 @@ class Timers:
 
 T = Timers(" ")
 
+global elastohydrSolver
+elastohydrSolver = ' '
+
 global toler
 toler = 0 
+
+global NumNewtonCalls
+NumNewtonCalls = 0
+
+global NewtIterEachStep
+NewtIterEachStep = 0
 
 global r
 r = 0 
@@ -145,6 +177,15 @@ AndersonIterEachStep = 0
 global FrontIterEachStep
 FrontIterEachStep = 0
 
+global ConsrtaintIterNumbEachStep
+ConsrtaintIterNumbEachStep = 0
+
+global path_for_front
+path_for_front = ' '
+
+
+global recordFront
+recordFront = False
 
 global NumAndersonCalls
 NumAndersonCalls = 0

@@ -885,21 +885,21 @@ class Controller:
         #     if self.sim_prop.frontAdvancing == "predictor-corrector":
         #         self.sim_prop.frontAdvancing = "implicit"
         import os
+############# create directory for front
+        if (mf.recordFront == True ):
+            path = mf.folder_start + 'Front_construction'
+            # Создаем директорию
+            try:
+                os.makedirs(path)
+            except FileExistsError:
+                print('Директория уже существует')  
+
         log.info("Starting time = " + repr(self.fracture.time))
         # starting time stepping loop
         while self.fracture.time < 0.999 * self.sim_prop.finalTime and self.TmStpCount < self.sim_prop.maxTimeSteps:
             mf.time_step_numb = self.TmStpCount
-            
-            if (mf.drowsol == True):
-                mf.folder = mf.folder_start
-                path = mf.folder +'time_step_' + repr(self.TmStpCount)
-                # Создаем директорию
-                try:
-                    os.makedirs(path)
-                except FileExistsError:
-                    print('Директория уже существует')
 
-                mf.folder = path +'/'    
+            
 
             mf.T.print()
 
@@ -1530,6 +1530,71 @@ class Controller:
         log = logging.getLogger('PyFrac.controller.advance_time_step')
         # loop for reattempting time stepping in case of failure.
         for i in range(0, self.sim_prop.maxReattempts):
+
+            if (mf.recordFront == True ):
+                path = mf.folder_start + 'Front_construction' + '/' +'time_step_' + repr(mf.time_step_numb) + '_' + repr(i)
+                mf.frontCoordDirectory = path
+                # Создаем директорию для каждого таймстепа для андерсона
+                try:
+                    os.makedirs(path)
+                except FileExistsError:
+                    print('Директория уже существует')
+
+                path = mf.folder_start + 'SignDist_Front' + '/' +'time_step_' + repr(mf.time_step_numb) + '_' + repr(i)
+                mf.SignDistDirectory = path
+                # Создаем директорию для каждого таймстепа для андерсона
+                try:
+                    os.makedirs(path)
+                except FileExistsError:
+                    print('Директория уже существует')  
+
+                path = mf.folder_start + 'CellStat_Front' + '/' +'time_step_' + repr(mf.time_step_numb) + '_' + repr(i)
+                mf.cellStatusDirectory = path
+                # Создаем директорию для каждого таймстепа для андерсона
+                try:
+                    os.makedirs(path)
+                except FileExistsError:
+                    print('Директория уже существует')            
+
+            
+            if (mf.drowsol == True) or (mf.recordsol == True):
+                mf.folder = mf.folder_start 
+                if ( mf.elastohydrSolver != 'implicit_Picard' ):
+                    path = mf.folder + 'anderson_output'
+                else:    
+                    path = mf.folder + 'implicit_Picard'
+                # Создаем директорию общей папки для андерсона
+                try:
+                    os.makedirs(path)
+                except FileExistsError:
+                    print('Директория уже существует')
+
+                # Создаем директорию общей папки для фронта
+                path_for_front = mf.folder + 'front_output'
+                try:
+                    os.makedirs(path_for_front)
+                except FileExistsError:
+                    print('Директория уже существует')    
+
+                path = path + '/' +'time_step_' + repr(mf.time_step_numb) + '_' + repr(i)
+                path_for_front = path_for_front + '/' +'time_step_' + repr(mf.time_step_numb) + '_' + repr(i)
+                # Создаем директорию для каждого таймстепа для андерсона
+                try:
+                    os.makedirs(path)
+                except FileExistsError:
+                    print('Директория уже существует')
+
+                # Создаем директорию для каждого таймстепа для андерсона
+                try:
+                    os.makedirs(path_for_front)
+                except FileExistsError:
+                    print('Директория уже существует')
+
+                mf.path_for_front = path_for_front +'/'
+                mf.folder = path +'/'    
+
+
+
             # smaller time step to reattempt time stepping; equal to the given time step on first iteration
             tmStp_to_attempt = timeStep * self.sim_prop.reAttemptFactor ** i
 

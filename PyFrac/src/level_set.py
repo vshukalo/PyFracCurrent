@@ -470,9 +470,9 @@ def Eikonal_Res(Tij, *args):
     """quadratic Eikonal equation residual to be used by numerical root finder"""
 
     (Tleft, Tright, Tbottom, Ttop, Fij, dx, dy) = args
-    return np.nanmax([(Tij - Tleft) / dx, 0]) ** 2 + np.nanmin([(Tright - Tij) / dx, 0]) ** 2 + np.nanmax(
-        [(Tij - Tbottom) / dy, 0]) ** 2 + \
-           np.nanmin([(Ttop - Tij) / dy, 0]) ** 2 - Fij ** 2
+    return np.nanmax([((Tij - Tleft) / dx)[0], 0]) ** 2 + np.nanmin([((Tright - Tij) / dx)[0], 0]) ** 2 + np.nanmax(
+        [((Tij - Tbottom) / dy)[0], 0]) ** 2 + \
+           np.nanmin([((Ttop - Tij) / dy)[0], 0]) ** 2 - Fij ** 2
 
 
 # -----------------------------------------------------------------------------------------------------------------------

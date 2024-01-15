@@ -2067,7 +2067,9 @@ def Picard_Newton(Res_fun, sys_fun, guess, TypValue, interItr_init, sim_prop, *a
         - solk (ndarray)       -- solution at the end of iteration.
         - data (tuple)         -- any data to be returned
     """
+    mf.NumNewtonCalls += 1
     log = logging.getLogger('PyFrac.Picard_Newton')
+    mf.T.tic('Newton')
     relax = sim_prop.relaxation_factor
     solk = guess
     k = 0
@@ -2075,9 +2077,14 @@ def Picard_Newton(Res_fun, sys_fun, guess, TypValue, interItr_init, sim_prop, *a
     interItr = interItr_init
     newton = 0
     converged = False
+    mf.NewtIterEachStep = 0
+    errorList = []
 
     while not converged: #todo:check system change (AM)
-
+        mf.NewtonIter +=1
+        mf.NewtIterEachStep +=1
+        if (k > 0):
+            solkm2 = solkm1
         solkm1 = solk
         if (k + 1) % PicardPerNewton == 0:
             Fx, interItr, indices = Elastohydrodynamic_ResidualFun(solk, sys_fun, interItr, *args)
@@ -2104,6 +2111,16 @@ def Picard_Newton(Res_fun, sys_fun, guess, TypValue, interItr_init, sim_prop, *a
         normlist.append(norm)
         k = k + 1
 
+        """ mf.T.tic('Aitken')
+        if ( (k+1) % 20 == 0 ):
+            r_n = solkm2 - solkm1
+            r_n_1 = solkm1 - solk
+            del_rn = r_n - r_n_1
+            #if not np.any(del_rn < 10**-16):
+            solk = solk -  r_n * np.dot(r_n, del_rn ) / np.dot(del_rn, del_rn)
+            errorList.append( abs(np.dot(r_n, r_n_1) / ( np.linalg.norm(r_n) * np.linalg.norm(r_n_1)  ) ))
+        mf.T.toc('Aitken') """
+
         if perf_node is not None:
             instrument_close(perf_node, perfNode_linSolve, norm, len(b), True, None, None)
             perf_node.linearSolve_data.append(perfNode_linSolve)
@@ -2117,9 +2134,50 @@ def Picard_Newton(Res_fun, sys_fun, guess, TypValue, interItr_init, sim_prop, *a
                 perfNode_linSolve.status = 'failed'
             return solk, None
 
+    with open( mf.folder_start +'NewtIter' +'.txt', 'a') as f:
+        f.write( 'time step: ' + repr(mf.time_step_numb) +\
+                ' Front it numb: ' + repr(mf.FrontIterEachStep) +\
+                ' Constrainte it numb: ' + repr(mf.ConsrtaintIterNumbEachStep) +\
+                repr(mf.NewtIterEachStep)+\
+                ' conver: ' + repr(converged) +'\n')
+
+    # write error to file
+    path = mf.folder + 'error/' 
+    # Создаем директорию
+    try:
+        os.makedirs(path)
+    except FileExistsError:
+        print('Директория уже существует')
+    
+    with open( path  +'numbNewtCall_' + repr(mf.NumNewtonCalls) +' error' +'.txt', 'a') as f:
+        f.write('\n'.join([ f"{a}\t{b}\t" for a, b in zip(range(0, len(errorList)), errorList) ]))                
 
     log.debug("Converged after " + repr(k) + " iterations")
     data = [interItr[0], interItr[2], interItr[3]]
+
+    """ if (mf.recordsol == True ):
+        temp_fold = mf.folder
+        path = mf.folder +'numbNewtCall_' + repr(mf.NumNewtonCalls)
+        # Создаем директорию
+        try:
+            os.makedirs(path)
+        except FileExistsError:
+            print('Директория уже существует')
+
+        mf.folder = path +'/'
+
+        ReshFull = np.array(ReshFull)
+        record_ddsol(ReshFull, args)
+
+        record_sol(w, p, ReshFull, args)
+
+        Norms = np.log2(np.array(normlist))
+        with open( mf.folder +'N' + '.txt', 'a') as f:
+            f.write('\n'.join([ f"{a}\t{b}\t" for a, b in zip(range(0, len(Norms)), Norms) ]))
+        
+        mf.folder = temp_fold  """
+
+    mf.T.toc('Newton')
     return solk, data
 
 
@@ -2413,39 +2471,89 @@ def countBigstabIter(xk):
         mf.BigstabIterNumb[mf.NumbBigsCalls] = 0
     mf.BigstabIterNumb[mf.NumbBigsCalls]= mf.BigstabIterNumb[mf.NumbBigsCalls] + 1
 
+
+def get_aitken_solution(x_n, x_n1, x_n2):
+    # returns modified solution
+    mf.T.tic('Aitken')
+    r_n = x_n - x_n1
+    r_n_1 = x_n1 - x_n2
+    del_rn = r_n - r_n_1
+    multi = np.dot(r_n, del_rn ) / np.dot(del_rn, del_rn)
+    mf.T.tic('Aitken')
+    return x_n -  r_n * multi
+
+def Get_solution_of_system(sim_prop, xks, interItr, A, b, Gks , *args):
+
+    if(mf.itersolve == True):
+        mf.T.tic('whole atc for BiCGStab' )
+        if (sim_prop.solveSparse == True ):
+            ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[0, ::], interItr, *args)
+        else: 
+            ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[0, ::], interItr, *args) 
+
+        #if(np.linalg.det(ASimple) == 0):
+        mf.T.tic('A_inv Simple = spilu(A_sp)' )
+        A_inv = spilu (ASimple)
+        mf.T.toc('A_inv Simple = spilu(A_sp)' )
+
+        mf.T.tic('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
+        M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)
+        mf.T.toc('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
+
+        mf.T.tic(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
+        Gks[0, ::], exit_code = bicgstab(A, b, callback = countBigstabIter, M = M, tol = mf.toler )
+        mf.T.toc(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
+
+        mf.T.toc('whole atc for BiCGStab' )
+        mf.NumbBigsCalls = mf.NumbBigsCalls + 1
+
+        mf.infoinEachIt.append(exit_code)
+    else:
+          
+        mf.T.tic('np.linalg.solve(A, b)' )
+        Gks[0, ::] = np.linalg.solve(A, b) 
+        mf.T.toc('np.linalg.solve(A, b)' )
+    
+
+        mf.numLinalgCalls = mf.numLinalgCalls + 1
+
+    return Gks[0, ::]   
+
+
+
 def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None):
-    """
-    Anderson solver for non linear system.
+    
+    #Anderson solver for non linear system.
 
-    Args:
-        sys_fun (function):                 -- The function giving the system A, b for the Anderson solver to solve the
-                                               linear system of the form Ax=b.
-        guess (ndarray):                    -- The initial guess.
-        interItr_init (ndarray):            -- Initial value of the variable(s) exchanged between the iterations (if
-                                               any).
-        sim_prop (SimulationProperties):    -- the SimulationProperties object giving simulation parameters.
-        relax (float):                      -- The relaxation factor.
-        args (tuple):                       -- arguments given to the residual and systems functions.
-        perf_node (IterationProperties):    -- the IterationProperties object passed to be populated with data.
-        m_Anderson                          -- value of the recursive time steps to consider for the anderson iteration
+    # Args:
+    #     sys_fun (function):                 -- The function giving the system A, b for the Anderson solver to solve the
+    #                                            linear system of the form Ax=b.
+    #     guess (ndarray):                    -- The initial guess.
+    #     interItr_init (ndarray):            -- Initial value of the variable(s) exchanged between the iterations (if
+    #                                            any).
+    #     sim_prop (SimulationProperties):    -- the SimulationProperties object giving simulation parameters.
+    #     relax (float):                      -- The relaxation factor.
+    #     args (tuple):                       -- arguments given to the residual and systems functions.
+    #     perf_node (IterationProperties):    -- the IterationProperties object passed to be populated with data.
+    #     m_Anderson                          -- value of the recursive time steps to consider for the anderson iteration
 
-    Returns:
-        - Xks[mk+1] (ndarray)  -- final solution at the end of the iterations.
-        - data (tuple)         -- any data to be returned
-    """
+    # Returns:
+    #     - Xks[mk+1] (ndarray)  -- final solution at the end of the iterations.
+    #     - data (tuple)         -- any data to be returned
+    
     log=logging.getLogger('PyFrac.Anderson')
-    m_Anderson = sim_prop.Anderson_parameter
-    relax = sim_prop.relaxation_factor
+    m_Anderson = sim_prop.Anderson_parameter  # defolt 4
+    relax = 0 #sim_prop.relaxation_factor
 
     (EltCrack, to_solve, to_impose, imposed_val, wc_to_impose, frac, fluid_prop, mat_prop,
     sim_prop, dt, Q, C, InCrack, LeakOff, active, neiInCrack, lst_edgeInCrk) = args
  
+    errorList = []
         
     ## Initialization of solution vectors
     xks = np.full((m_Anderson+2, guess.size), 0.)
     Fks = np.full((m_Anderson+1, guess.size), 0.)
     Gks = np.full((m_Anderson+1, guess.size), 0.)
-    Gks_ = np.full((m_Anderson+1, guess.size), 0.)
     ReshFull = []
     ## Initialization of iteration parameters
     k = 0
@@ -2457,51 +2565,10 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
         # First iteration
         xks[0, ::] = np.array([guess])                                       # xo
         ReshFull.append(xks[0, ::])
+
         (A, b, interItr, indices) = sys_fun(xks[0, ::], interItr, *args)     # assembling A and b
         
-        if(mf.itersolve == True):
-            mf.T.tic('whole atc for BiCGStab' )
-            if (sim_prop.solveSparse == True ):
-                ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[0, ::], interItr, *args)
-            else: 
-                ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[0, ::], interItr, *args) 
-    
-            #if(np.linalg.det(ASimple) == 0):
-            mf.T.tic('A_inv Simple = spilu(A_sp)' )
-            A_inv = spilu (ASimple)
-            mf.T.toc('A_inv Simple = spilu(A_sp)' )
-            """ else:
-                mf.T.tic('A_inv Simple = spilu(A_sp)' )
-
-                A_inv = spilu (A)
-                mf.T.toc('A_inv Simple = spilu(A_sp)' )
-            """
-
-            mf.T.tic('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
-            M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)
-            mf.T.toc('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
-
-            mf.T.tic(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
-            Gks[0, ::], exit_code = bicgstab(A, b, callback = countBigstabIter, M = M, tol = mf.toler )
-            mf.T.toc(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
-
-            mf.T.toc('whole atc for BiCGStab' )
-            mf.NumbBigsCalls = mf.NumbBigsCalls + 1
-
-            # холостой пробег для измерения
-            """ mf.T.tic(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' )
-            Gks_[0, ::], exit_code = bicgstab( ASimple , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
-            mf.T.toc(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' ) """
-
-            mf.infoinEachIt.append(exit_code)
-        else:
-          
-            mf.T.tic('np.linalg.solve(A, b)' )
-            Gks[0, ::] = np.linalg.solve(A, b) 
-            mf.T.toc('np.linalg.solve(A, b)' )
-       
-
-            mf.numLinalgCalls = mf.numLinalgCalls + 1
+        Gks[0, ::] = Get_solution_of_system(sim_prop, xks, interItr, A, b, Gks , *args)
 
         Fks[0, ::] = Gks[0, ::] - xks[0, ::]
         xks[1, ::] = Gks[0, ::]                                               # x1
@@ -2515,7 +2582,6 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
                              len(b), False, 'singular matrix', None)
             perf_node.linearSolve_data.append(perfNode_linSolve)
         return solk, None
-
 
     A_inv_reused = False
     mf.AndersonIterEachStep = 0
@@ -2531,16 +2597,15 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
                 Gks = np.roll(Gks, -1, axis=0)
                 Fks = np.roll(Fks, -1, axis=0)
             else:
-                
                 (A, b, interItr, indices) = sys_fun(xks[mk + 1, ::], interItr, *args)
 
             perfNode_linSolve = instrument_start("linear system solve", perf_node)
             
+
             if (mf.itersolve == True):
                 
                 mf.T.tic('whole atc for BiCGStab' )
-
-                
+ 
                 if (mf.reused):
                     if ( A_inv_reused ):
                         A_inv = mf.A_inv_saved
@@ -2583,56 +2648,48 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
                 Gks[mk + 1, ::], exit_code = bicgstab( A , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
                 mf.T.toc(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
 
-            
                 mf.T.toc('whole atc for BiCGStab' )
                 mf.NumbBigsCalls = mf.NumbBigsCalls + 1 
                 mf.infoinEachIt.append(exit_code)
-
-                # холостой пробег для измерения
-                """ mf.T.tic(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' )
-                Gks_[mk + 1, ::], exit_code = bicgstab( ASimple , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
-                mf.T.toc(' bicgstab(ASimple, b, callback = countBigstabIter, M = M )' ) """
             else:
-                """ if(sim_prop.solveSparse == True ):
-                    ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[mk + 2, ::], interItr, *args)
-                else: 
-                    ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[mk + 2, ::], interItr, *args)       """
-                
                 mf.T.tic('np.linalg.solve(A, b)' )
                 Gks[mk + 1, ::] = np.linalg.solve(A, b)
-
-                """ Gks_[mk + 1, ::] = np.linalg.solve(ASimple, b)
-                with open( mf.folder +' diff sol' + mf.Ctemplate + '.txt', 'a') as f:
-                    f.write(repr(Gks[mk + 1, ::] - Gks_[mk + 1, ::]) +'\n') """
-                
                 mf.T.toc('np.linalg.solve(A, b)' ) 
-        
-                """ plt.plot(xwave)
-                plt.show()
-                plt.plot(Gks[0, ::])
-                plt.show() """
-
                 mf.numLinalgCalls = mf.numLinalgCalls + 1
 
 
-            Fks[mk + 1, ::] = Gks[mk + 1, ::] - xks[mk + 1, ::]
+            if (True):
+                Fks[mk + 1, ::] = Gks[mk + 1, ::] - xks[mk + 1, ::]
 
-            ## Setting up the Least square problem of Anderson
-            A_Anderson = np.transpose(Fks[:mk+1, ::] - Fks[mk+1, ::])
-            b_Anderson = -Fks[mk+1, ::]
+                ## Setting up the Least square problem of Anderson
+                A_Anderson = np.transpose(Fks[:mk+1, ::] - Fks[mk+1, ::])
+                b_Anderson = -Fks[mk+1, ::]
 
-            # Solving the least square problem for the coefficients
-            # omega_s = np.linalg.lstsq(A_Anderson, b_Anderson, rcond=None)[0]
-            omega_s = lsq_linear(A_Anderson, b_Anderson, bounds=(0, 1/(mk+2)), lsmr_tol='auto').x
-            omega_s = np.append(omega_s, 1.0 - sum(omega_s))
+                # Solving the least square problem for the coefficients
+                # omega_s = np.linalg.lstsq(A_Anderson, b_Anderson, rcond=None)[0]
+                omega_s = lsq_linear(A_Anderson, b_Anderson, bounds=(0, 1/(mk+2)), lsmr_tol='auto').x
+                omega_s = np.append(omega_s, 1.0 - sum(omega_s))
 
 
             ## Updating xk in a relaxed version
             if k >= m_Anderson:# + 1:
                 xks = np.roll(xks, -1, axis=0)
 
-            xks[mk + 2, ::] = (1-relax) * np.sum(np.transpose(np.multiply(np.transpose(xks[:mk+2,::]), omega_s)),axis=0)\
-                 + relax * np.sum(np.transpose(np.multiply(np.transpose(Gks[:mk+2,::]), omega_s)),axis=0)
+            #relax = 0
+
+            if (False):
+                xks[mk + 2, ::] = (1-relax) * np.sum(np.transpose(np.multiply(np.transpose(xks[:mk+2,::]), omega_s)),axis=0)\
+                    + relax * np.sum(np.transpose(np.multiply(np.transpose(Gks[:mk+2,::]), omega_s)),axis=0)
+            else:
+                xks[mk + 2, ::] = Gks[mk + 1, ::]
+
+            ## Aitken's delta-squared process
+            r_n = xks[mk + 2, ::] - xks[mk + 1, ::]
+            r_n_1 = xks[mk + 1, ::] - xks[mk, ::]
+
+            
+            errorList.append( abs(np.dot(r_n, r_n_1) / ( np.linalg.norm(r_n) * np.linalg.norm(r_n_1) ) ))
+
 
             ReshFull.append(xks[mk + 2, ::])
 
@@ -2648,6 +2705,182 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
         ## Check for convergency of the solution
 
         converged, norm = check_covergance(xks[mk + 1, ::], xks[mk + 2, ::], indices, sim_prop.toleranceEHL)
+        normlist.append(norm)
+
+        if ( ( k % 5 == 0 ) and (k != 0) )  or ( ( k % 6 == 0 ) and (k != 0) ):
+            xks = np.roll(xks, -1, axis=0)
+            xks[mk + 2, ::] = get_aitken_solution(xks[mk + 1, ::], xks[mk , ::], xks[mk-1, ::])
+
+        k = k + 1
+
+        
+        A_inv_reused = (norm < mf.tolerReuse)
+
+        if perf_node is not None:
+            instrument_close(perf_node, perfNode_linSolve, norm, len(b), True, None, None)
+            perf_node.linearSolve_data.append(perfNode_linSolve)
+
+        if k == sim_prop.maxSolverItrs:  # returns nan as solution if does not converge
+            log.warning('Anderson iteration not converged after ' + repr(sim_prop.maxSolverItrs) + \
+                  ' iterations, norm:' + repr(norm))
+            solk = np.full((np.size(xks[0,::]),), np.nan, dtype=np.float64)
+            if perf_node is not None:
+                perfNode_linSolve.failure_cause = 'singular matrix'
+                perfNode_linSolve.status = 'failed'
+            with open( mf.folder_start +'numbAndIter' +'.txt', 'a') as f:
+                f.write( 'time step: ' + repr(mf.time_step_numb) +\
+                        ' Front it numb: ' + repr(mf.FrontIterEachStep) +\
+                        ' Constrainte it numb: ' + repr(mf.ConsrtaintIterNumbEachStep) +\
+                        ' num And Call ' + repr(mf.NumAndersonCalls) + ':  ' + repr(mf.AndersonIterEachStep)+\
+                         ' conver: ' + repr(converged)     +'\n')
+            return solk, None
+
+
+    record_info_to_files (converged, errorList, args, w, p, normlist, ReshFull)
+
+    data = [interItr[0], interItr[2], interItr[3]]
+    return xks[mk + 2, ::], data
+
+
+def Anderson________(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None):# anti
+    """
+    solver without anderson corection for non linear system.
+
+    Args:
+        sys_fun (function):                 -- The function giving the system A, b for the Anderson solver to solve the
+                                               linear system of the form Ax=b.
+        guess (ndarray):                    -- The initial guess.
+        interItr_init (ndarray):            -- Initial value of the variable(s) exchanged between the iterations (if
+                                               any).
+        sim_prop (SimulationProperties):    -- the SimulationProperties object giving simulation parameters.
+        relax (float):                      -- The relaxation factor.
+        args (tuple):                       -- arguments given to the residual and systems functions.
+        perf_node (IterationProperties):    -- the IterationProperties object passed to be populated with data.
+        m_Anderson                          -- value of the recursive time steps to consider for the anderson iteration
+
+    Returns:
+        - Xks[mk+2] (ndarray)  -- final solution at the end of the iterations.
+        - data (tuple)         -- any data to be returned
+    """
+    log=logging.getLogger('PyFrac.Anderson')
+    relax = sim_prop.relaxation_factor
+    #relax = 1
+    (EltCrack, to_solve, to_impose, imposed_val, wc_to_impose, frac, fluid_prop, mat_prop,
+    sim_prop, dt, Q, C, InCrack, LeakOff, active, neiInCrack, lst_edgeInCrk) = args
+ 
+    errorList = []
+        
+    ## Initialization of solution vectors
+    xks = np.full((3, guess.size), 0.)
+    ReshFull = []
+    ## Initialization of iteration parameters
+    k = 0
+    normlist = []
+    interItr = interItr_init
+    converged = False
+    try:
+        perfNode_linSolve = instrument_start("linear system solve", perf_node)
+        # First iteration
+        xks[0, ::] = np.array([guess])                                       # xo
+        ReshFull.append(xks[0, ::])
+
+        (A, b, interItr, indices) = sys_fun(xks[0, ::], interItr, *args)     # assembling A and b
+        
+        xks[1, ::] = Get_solution_of_system(sim_prop, xks, interItr, A, b, xks , *args) # x1
+                                      
+        ReshFull.append(xks[1, ::])
+
+    except np.linalg.linalg.LinAlgError:
+        log.error('singular matrix!')
+        solk = np.full((len(xks[0]),), np.nan, dtype=np.float64)
+        if perf_node is not None:
+            instrument_close(perf_node, perfNode_linSolve, None,
+                             len(b), False, 'singular matrix', None)
+            perf_node.linearSolve_data.append(perfNode_linSolve)
+        return solk, None
+
+    xks[ 2, ::] = xks[1, ::]
+    A_inv_reused = False
+    mf.AndersonIterEachStep = 0
+    while not converged:
+        mf.AndersonIterEachStep += 1
+        mf.AndersonIter = mf.AndersonIter + 1
+        try:
+            (A, b, interItr, indices) = sys_fun(xks[1, ::], interItr, *args)
+
+            perfNode_linSolve = instrument_start("linear system solve", perf_node)
+
+            if (mf.itersolve == True):
+                
+                mf.T.tic('whole atc for BiCGStab' )
+ 
+                if (mf.reused):
+                    if ( A_inv_reused ):
+                        A_inv = mf.A_inv_saved
+                    else:
+                        if(sim_prop.solveSparse == True ):
+                            ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[ 2, ::], interItr, *args)
+                        else: 
+                            ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[ 2, ::], interItr, *args)
+
+                        mf.T.tic('A_inv Simple = spilu(A_sp)' )        
+                        A_inv = spilu (ASimple)
+                        mf.T.toc('A_inv Simple = spilu(A_sp)' )
+                        mf.A_inv_saved = A_inv
+                else:
+                    if(sim_prop.solveSparse == True ):
+                        ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP_sparse(xks[2, ::], interItr, *args)
+                    else: 
+                        ASimple = MyMakeEquationSystem_ViscousFluid_pressure_substituted_deltaP(xks[2, ::], interItr, *args)
+                    mf.T.tic('A_inv Simple = spilu(A_sp)' )
+                    A_inv = spilu (ASimple)
+                    mf.T.toc('A_inv Simple = spilu(A_sp)' ) 
+
+                mf.T.tic('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
+                M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)
+                mf.T.toc('M = LinearOperator((A.shape[0], A.shape[1]), A_inv.solve)' )
+
+                mf.T.tic(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
+                xks[ 2, ::], exit_code = bicgstab( A , b, callback = countBigstabIter, M = M, tol = mf.toler ) 
+                mf.T.toc(' bicgstab(A, b, callback = countBigstabIter, M = M )' )
+
+                mf.T.toc('whole atc for BiCGStab' )
+                mf.NumbBigsCalls = mf.NumbBigsCalls + 1 
+                mf.infoinEachIt.append(exit_code)
+            else:
+                mf.T.tic('np.linalg.solve(A, b)' )
+                xks[2, ::] = np.linalg.solve(A, b)
+                mf.T.toc('np.linalg.solve(A, b)' ) 
+                mf.numLinalgCalls = mf.numLinalgCalls + 1
+
+            ## Aitken's delta-squared process
+            r_n = xks[2, ::] - xks[ 1, ::]
+            r_n_1 = xks[ 1, ::] - xks[0, ::]
+            errorList.append( abs(np.dot(r_n, r_n_1) / ( np.linalg.norm(r_n) * np.linalg.norm(r_n_1)  ) ))
+
+            converged, norm = check_covergance(xks[1, ::], xks[2, ::], indices, sim_prop.toleranceEHL)
+
+            if ( (k+1) % 4 ==0):
+                xks[2, ::] = get_aitken_solution(xks[ 2, ::], xks[ 1, ::], xks[0, ::])
+            
+            ReshFull.append(xks[2, ::])
+
+            ## Updating xk in a relaxed version
+            if k >= 1:# + 1:
+                xks = np.roll(xks, -1, axis=0)
+
+        except np.linalg.linalg.LinAlgError:
+            log.error('singular matrix!')
+            solk = np.full((len(xks[0]),), np.nan, dtype=np.float64)
+            if perf_node is not None:
+                instrument_close(perf_node, perfNode_linSolve, None,
+                                 len(b), False, 'singular matrix', None)
+                perf_node.linearSolve_data.append(perfNode_linSolve)
+            return solk, None
+
+        ## Check for convergency of the solution
+
+        #converged, norm = check_covergance(xks[1, ::], xks[2, ::], indices, sim_prop.toleranceEHL)
         normlist.append(norm)
         k = k + 1
 
@@ -2665,18 +2898,47 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
             if perf_node is not None:
                 perfNode_linSolve.failure_cause = 'singular matrix'
                 perfNode_linSolve.status = 'failed'
+            with open( mf.folder_start +'numbAndIter' +'.txt', 'a') as f:
+                f.write( 'time step: ' + repr(mf.time_step_numb) +\
+                        ' Front it numb: ' + repr(mf.FrontIterEachStep) +\
+                        ' Constrainte it numb: ' + repr(mf.ConsrtaintIterNumbEachStep) +\
+                        ' num And Call ' + repr(mf.NumAndersonCalls) + ':  ' + repr(mf.AndersonIterEachStep)+\
+                         ' conver: ' + repr(converged)     +'\n')
             return solk, None
 
-    with open( mf.folder_start +'numbAndIter' +'.txt', 'a') as f:
-        f.write( 'time step: ' + repr(mf.time_step_numb) + ' num And Call ' + repr(mf.NumAndersonCalls) + ':  ' + repr(mf.AndersonIterEachStep) +'\n')
+
+    record_info_to_files (converged, errorList, args, w, p, normlist, ReshFull)
 
     data = [interItr[0], interItr[2], interItr[3]]
+    return xks[2, ::], data
 
-    """ with open( mf.folder +'p_'+ repr(mf.T.name) +'.txt', 'a') as f:
-        f.write(repr(xks[::, len(to_solve):]) +'\n')
-    with open( mf.folder +'w_'+ repr(mf.T.name) +'.txt', 'a') as f:
-        f.write(repr(xks[::, :len(to_solve)]) +'\n') """
-        
+
+
+
+
+def record_adrers_numb_it_info (converged):
+    with open( mf.folder_start +'numbAndIter' +'.txt', 'a') as f:
+        f.write( 'time step: ' + repr(mf.time_step_numb) +\
+                ' Front it numb: ' + repr(mf.FrontIterEachStep) +\
+                ' Constrainte it numb: ' + repr(mf.ConsrtaintIterNumbEachStep) +\
+                ' num And Call ' + repr(mf.NumAndersonCalls) + ':  ' + repr(mf.AndersonIterEachStep)+\
+                    ' conver: ' + repr(converged)     +'\n')
+
+def record_info_to_files (converged, errorList, args, w, p, normlist, ReshFull):
+
+    record_adrers_numb_it_info (converged)
+
+    # write error to file
+    path = mf.folder + 'error/' 
+    # Создаем директорию
+    try:
+        os.makedirs(path)
+    except FileExistsError:
+        print('Директория уже существует')
+    
+    with open( path  +'numbAndCall_' + repr(mf.NumAndersonCalls) +' error' +'.txt', 'a') as f:
+        f.write('\n'.join([ f"{a}\t{b}\t" for a, b in zip(range(0, len(errorList)), errorList) ]))
+
     # drow solution 
     if (mf.drowsol == True ):   
         temp_fold = mf.folder
@@ -2705,8 +2967,104 @@ def Anderson(sys_fun, guess, interItr_init, sim_prop,w, p, *args, perf_node=None
 
         mf.folder = temp_fold
     
+    if (mf.recordsol == True ):
+        temp_fold = mf.folder
+        path = mf.folder +'numbAndCall_' + repr(mf.NumAndersonCalls)
+        # Создаем директорию
+        try:
+            os.makedirs(path)
+        except FileExistsError:
+            print('Директория уже существует')
 
-    return xks[mk + 2, ::], data
+        mf.folder = path +'/'
+
+        ReshFull = np.array(ReshFull)
+        record_ddsol(ReshFull, args)
+
+        record_sol(w, p, ReshFull, args)
+
+        Norms = np.log2(np.array(normlist))
+        try:
+            os.makedirs(mf.folder_start +'/Norms')
+        except FileExistsError:
+            print('Директория уже существует')
+
+        with open( mf.folder_start +'/Norms/' +'N_timeStep' + repr(mf.time_step_numb) + '_numbAndCall_' \
+                  + repr(mf.NumAndersonCalls) + '.txt', 'a') as f:
+            f.write('\n'.join([ f"{a}\t{b}\t" for a, b in zip(range(0, len(Norms)), Norms) ]))
+        
+        mf.folder = temp_fold
+
+def record_ddsol(xks, args):
+    (EltCrack, to_solve, to_impose, imposed_val, wc_to_impose, frac, fluid_prop, mat_prop,
+    sim_prop, dt, Q, C, InCrack, LeakOff, active, neiInCrack, lst_edgeInCrk) = args
+
+    dw = xks[::, :len(to_solve)]
+    dp = xks[::, len(to_solve):]
+
+    x_dw = frac.mesh.CenterCoor[to_solve, 0]
+    y_dw = frac.mesh.CenterCoor[to_solve, 1]
+
+    x_dp = frac.mesh.CenterCoor[to_impose, 0]
+    y_dp = frac.mesh.CenterCoor[to_impose, 1]
+
+    def record_ddw(iteration):
+        vector = dw[iteration, ::]  # vector of sol on current iter : dw 
+        vector_next = dw[iteration+1, ::]  # vector of sol on next iter : dw 
+        x = x_dw
+        y = y_dw
+        z = vector_next - vector
+        with open( mf.folder + 'ddW_' + repr(iteration) +'.txt', 'a') as f:
+            f.write('\n'.join([f"{a}\t{b}\t{c}" for a, b, c in zip(x, y, z)]))
+
+    
+    def record_ddp(iteration):
+        vector = dp[iteration, ::]  # vector of sol on current iter : dp
+        vector_next = dp[iteration+1, ::]  # vector of sol on next iter : dp 
+        x = x_dp
+        y = y_dp
+        z = vector_next - vector
+        with open( mf.folder + 'ddP_' + repr(iteration) +'.txt', 'a') as f:
+            f.write('\n'.join([f"{a}\t{b}\t{c}" for a, b, c in zip(x, y, z)]))
+        
+    for i in range( len(dw[::, 1]) -2):
+        record_ddw(i)      
+    for i in range( len(dp[::, 1]) -2):
+        record_ddp(i)
+
+def record_sol(w, p, xks, args):
+    (EltCrack, to_solve, to_impose, imposed_val, wc_to_impose, frac, fluid_prop, mat_prop,
+    sim_prop, dt, Q, C, InCrack, LeakOff, active, neiInCrack, lst_edgeInCrk) = args
+
+    dw = xks[::, :len(to_solve)]
+    dp = xks[::, len(to_solve) + len(active): len(to_solve) + len(active) + len(to_impose)]
+
+    x_dw = frac.mesh.CenterCoor[to_solve, 0]
+    y_dw = frac.mesh.CenterCoor[to_solve, 1]
+
+    x_dp = frac.mesh.CenterCoor[to_impose, 0]
+    y_dp = frac.mesh.CenterCoor[to_impose, 1]
+
+    def record_w(iteration):
+        vector = w + dw[iteration, ::]  # vector of sol on current iter : dw 
+        x = x_dw
+        y = y_dw
+        z = vector
+        with open( mf.folder + 'W_' + repr(iteration) +'.txt', 'a') as f:
+            f.write('\n'.join([f"{a}\t{b}\t{c}" for a, b, c in zip(x, y, z)]))
+ 
+    def record_p(iteration):
+        vector = p + dp[iteration, ::]  # vector of sol on current iter : dw 
+        x = x_dp
+        y = y_dp
+        z = vector
+        with open( mf.folder + 'P_' + repr(iteration) +'.txt', 'a') as f:
+            f.write('\n'.join([f"{a}\t{b}\t{c}" for a, b, c in zip(x, y, z)]))
+    
+    for i in range( len(dw[::, 1]) -2):
+        record_w(i)      
+    for i in range( len(dp[::, 1]) -2):
+        record_p(i)
 
 def drow_ddsol(xks, args):
     (EltCrack, to_solve, to_impose, imposed_val, wc_to_impose, frac, fluid_prop, mat_prop,

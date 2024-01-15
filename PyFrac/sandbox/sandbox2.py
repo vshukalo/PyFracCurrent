@@ -17,7 +17,8 @@ from utility import setup_logging_to_console
 
 def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
     # setting up the verbosity level of the log at console
-    setup_logging_to_console(verbosity_level='info')
+    setup_logging_to_console(verbosity_level='debug')
+
 
     # creating mesh
     Mesh = CartesianMesh(lx, ly, num_split_x, num_split_y)
@@ -38,18 +39,28 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
             
     if (mf.crackForm == 'sandglass'):
         # sangglass
-        def sigmaO_func(x, y):
-            if (y > 80) or (y < -50):
+        """ def sigmaO_func(x, y):
+            if (y < 60):
                 return 2e+7
-            elif (y > 35) and (y<45):
-                return 0.1*2e+7
             else:
-                return 3e+6
+                return 1.7e+7 """
+            
+        def sigmaO_func(x, y):
+            if (abs(y) < 60):
+                return 2e+7
+            else:
+                return 1.7e+7    
+
+        """ def sigmaO_func(x, y):
+            if (y > 100) or (y < -100):
+                return 2e+7
+            elif ((y > 35) and (y<45)) or ((y < -35) and (y>-45)) :
+                return 6e+6
+            else:
+                return 3e+6 """
             
             
     
-        
-
     cl = 0 # Carters leak of coefficient [m s^(-1/2)] 
     Solid = MaterialProperties(Mesh,
                             Eprime,
@@ -69,14 +80,18 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
 
     # simulation properties
     simulProp = SimulationProperties()
+    #simulProp.relaxation_factor = 0.8
+    #simulProp.elastohydrSolver = 'implicit_Picard'
+    #mf.elastohydrSolver = simulProp.elastohydrSolver
+    simulProp.projMethod = 'ILSA_orig'   # 'LS_grad'    'LS_continousfront'  'ILSA_orig'
     simulProp.finalTime = time              # the time at which the simulation stops
     simulProp.bckColor = 'sigma0'           # setting the parameter according to which the mesh is color coded
-    simulProp.set_outputFolder(mf.folder)
+    simulProp.set_outputFolder(mf.folder_start)
     simulProp.tmStpPrefactor = 1.0          # decreasing the size of time step
     simulProp.saveToDisk = False
     simulProp.outputTimePeriod = 50                   # to save after every time step
-    simulProp.plotFigure = True
-    simulProp.collectPerfData
+    simulProp.plotFigure = mf.plot
+    simulProp.collectPerfData = True
 
     #simulProp.set_tipAsymptote('M')                     # tip asymptote is evaluated with the viscosity dominated assumption
 
@@ -102,9 +117,9 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
     #simulProp.meshExtensionAllDir = True
     #simulProp.set_mesh_extension_direction(['horizontal'])
 
-    simulProp.maxSolverItrs = 2000                                   # increase the Anderson iteration limit for the
+    simulProp.maxSolverItrs = 1000                                   # increase the Anderson iteration limit for the
                                                                     # elastohydrodynamic solver
-    simulProp.maxFrontItrs = 2000
+    simulProp.maxFrontItrs = 50
 
     simulProp.toleranceEHL = mf.tolInAnders
 
@@ -138,18 +153,18 @@ def sand (num_split_x, num_split_y, myCompressibility, min_w, time, Q, lx, ly):
 import MyFunionsFile as mf # file with Timer and global varibles
 
 # net parameters
-nn = 70
+nn = 100
 n = nn
 m = nn = nn
 m = n
 num_split_x = n
 num_split_y = m
-lx = 250
-ly = 250
+lx = 300
+ly = 300
 # problem parameters
 myCompressibility = 1e-9
 min_w = 1e-6
-time  = 400
+time  = 800
 Q0 = 0.053
 
 # for matrix view
@@ -161,11 +176,15 @@ mf.itersolve = True
 mf.Ctemplate = '5x5point'     
 mf.tolerReuse = 0.05  # tolerance for reusing
 mf.toler = 1e-5*Q0 # tolerance for bisgstab iterations
-mf.tolInAnders = 0.001
+mf.tolInAnders = 1e-10
 
 mf.crackForm = 'sandglass'  # 'pkn'  'sandglass'
 
-mf.drowsol = False
+mf.drowsol = False 
+mf.recordsol = True
+mf.plot = True
+mf.recordFront = True
+mf.relax_alfa = 0.5
 
 #  simplified C templates:                                             .                .....                    ...
 #                                    .                ...             ...               .....                   .....          
@@ -174,16 +193,17 @@ mf.drowsol = False
 #                                                                      .                .....                    ...
 
 # define derectory and name for output file
-folderName = 'new_n_' + repr(nn) +'_'+  mf.crackForm  +'_AndrTol_' + repr(mf.tolInAnders) + '_l_' + repr(lx) + '_time_' + repr(time) 
+folderName = 'n_' + repr(nn) +'_'+  mf.crackForm  +'_AndrTol_' + repr(mf.tolInAnders) + '_l_' + repr(lx) + '_time_' + repr(time) +' '
 import os
-path = 'C:/Users/VShukalo/myFolder/work/current_num_results/time/v2_dw_dp_drowing/'+ folderName
+path = 'C:/Users/VShukalo/myFolder/work/current_num_results/2024/12.01_try_to_correct_aitkin_apply/'+ folderName +'13'
         
-
 # Создаем директорию
 try:
     os.makedirs(path)
 except FileExistsError:
     print('Директория уже существует')
+    path = path + '1'
+    os.makedirs(path)
 
 mf.folder = path +'/'
 # эта папка нужна чтобы файлы с колич итерации отображались в корневой папке
@@ -196,9 +216,13 @@ if (( not mf.reused) and (mf.itersolve)):
 if (( not mf.reused) and (not mf.itersolve)):    
     mf.directory =  mf.folder   + ' standart ' 
 
-
-
 mf.T.changeName('n = ' + repr(n) + ' tough 0' + ' lx ' + repr(lx) + ' ly '+ repr(ly) + ' time ' + repr (time)  )
+
+# перенаправление для записи всего в файл вместо консоли
+import sys
+path = mf.folder +  'log.txt'
+sys.stdout = open(path, 'w')
+
 
 # run the calculation
 mf.T.tic("all program time")
@@ -208,13 +232,13 @@ mf.T.toc("all program time")
 #add info to file
 mf.T.addInfo ('n = ' + repr(n) + ' time ' + repr(time) + ' tosolve ' + repr(mf.numToSolv) )
 mf.T.addInfo( 'w, l ' +  repr(w) + ' ' + repr(l) )
-if (mf.itersolve == False):
+""" if (mf.itersolve == False):
     mf.T.addInfo ( 'numLinalgCalls ' + repr(mf.numLinalgCalls))
 else:
-    mf.T.addInfo( 'numBCG_Calls ' +  repr(mf.NumbBigsCalls) )    
+    mf.T.addInfo( 'numBCG_Calls ' +  repr(mf.NumbBigsCalls) )   """  
 
-mf.T.addInfo( 'Anderson Iter numb ' +  repr(mf.AndersonIter) )
-mf.T.addInfo( 'Anderson calls numb ' +  repr(mf.NumAndersonCalls) )
+""" mf.T.addInfo( 'Anderson Iter numb ' +  repr(mf.AndersonIter) )
+mf.T.addInfo( 'Anderson calls numb ' +  repr(mf.NumAndersonCalls) ) """
 mf.T.addInfo( 'Toughness Iter numb ' +  repr(mf.ToughnessIterNumb) )
 mf.T.addInfo( 'Front Iter numb ' +  repr(mf.NumbFrontIter) )
 mf.T.addInfo( 'Constraint Iter numb ' +  repr(mf.ConsrtaintIterNumb) )
@@ -223,7 +247,7 @@ mf.T.addInfo( 'Constraint Iter numb ' +  repr(mf.ConsrtaintIterNumb) )
 
 # add to file averaged num of bicgstab iter, time of bicgstab call, time of Ainv
 sum = 0
-if (mf.itersolve == True):
+""" if (mf.itersolve == True):
     #with open ( mf.directory + 'bicg num iter ' + mf.T.name + '.txt', 'a') as f:
     for i in range(0, mf.NumbBigsCalls):
             #f.write( 'number of Bigstab iter: '  + repr(mf.BigstabIterNumb[i]) + '\n' )
@@ -239,7 +263,7 @@ if (mf.itersolve == True):
     name = ' bicgstab(A, b, callback = countBigstabIter, M = M )'
     mf.T.addInfo('average time of bicgstab call ' + repr( mf.T.GetInfo(name)* 1e-9/mf.NumbBigsCalls))
     name = 'A_inv Simple = spilu(A_sp)'
-    mf.T.addInfo('average time of Ainv ' + repr( mf.T.GetInfo(name)* 1e-9/mf.NumbBigsCalls))
+    mf.T.addInfo('average time of Ainv ' + repr( mf.T.GetInfo(name)* 1e-9/mf.NumbBigsCalls)) """
 
 
 # output info + times in file
